@@ -1,0 +1,52 @@
+# ========================
+# Golang
+# ========================
+
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Build output
+/bin/
+/obj/
+*.out
+
+# Go modules
+vendor/
+
+# IDE specific
+*.idea/
+*.vscode/
+
+# ========================
+# Air (live reload)
+# ========================
+# Air crea dei file temporanei
+tmp/
+
+# ========================
+# Docker
+# ========================
+
+# Ignore local Docker Compose override files if needed
+docker-compose.override.yml
+
+# Ignore Docker volumes / tmp data
+**/tmp
+**/logs
+
+# Docker build cache
+docker-compose.*.yml
+
+# ========================
+# OS-specific
+# ========================
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
