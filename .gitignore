@@ -1,0 +1,34 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Build output
+/bin/
+/obj/
+*.out
+
+# Go modules
+vendor/
+
+# IDE specific
+*.idea/
+*.vscode/
+
+# Air (live reload)
+tmp/
+
+# Docker
+docker-compose.override.yml
+**/tmp
+**/logs
+docker-compose.*.yml
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# env
+*.env
