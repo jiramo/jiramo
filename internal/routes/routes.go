@@ -9,10 +9,11 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectHandlers *handler.ProjectHandler) {
+func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectHandlers *handler.ProjectHandler, webHandler *handler.WebHandler) {
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		utils.WriteJSON(w, http.StatusOK, "Hello from jiramo API")
 	})
+	router.Handle("/", webHandler.UIHandler())
 
 	// /auth
 	authRouter := router.PathPrefix("/auth").Subrouter()

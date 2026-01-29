@@ -19,8 +19,6 @@ type User struct {
 	Email        string    `json:"email" gorm:"unique"`
 	PasswordHash string    `json:"-"`
 	Role         UserRole  `json:"role" gorm:"type:varchar(10);default:'user';check:role IN ('user','admin')" validate:"oneof=user admin"`
-
-	Projects []Project `gorm:"foreignKey:CustomerID"`
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {

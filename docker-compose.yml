@@ -1,45 +1,53 @@
 services:
-  app:
-    container_name: jiramo
+  # 1. Il Backend Go
+  backend:
     build:
       context: .
       dockerfile: Dockerfile.dev
     ports:
       - "8080:8080"
+    volumes:
+      - ./:/app # Montiamo il codice locale dentro il container
     environment:
+      - APP_ENV=dev
+      - FRONTEND_URL=http://frontend:5173
       - DB_HOST=postgres
       - DB_USER=postgres
       - DB_PASSWORD=password
       - DB_NAME=gotype
       - DB_PORT=5432
       - JWT_SECRET=dev_secret_key
-    volumes:
-      - .:/app
-      - /app/tmp
     depends_on:
       - postgres
-    restart: unless-stopped
+      - frontend
 
+  # 2. Il Frontend React/Vite
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - NPM_CONFIG_UPDATE_NOTIFIER=false
+    command: sh -c "npm install && npm run dev -- --host"
+    stdin_open: true
+    tty: true
+
+  # 3. Database Postgres
   postgres:
-    container_name: jiramo_db_dev
     image: postgres:15-alpine
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=gotype
-    volumes:
-      - pgdata:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-
-  adminer:
-    container_name: jiramo_adminer
-    image: adminer
-    restart: unless-stopped
-    ports:
-      - "8081:8080"
-    depends_on:
-      - postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
 volumes:
-  pgdata:
+  postgres_data:

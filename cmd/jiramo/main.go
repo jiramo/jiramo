@@ -15,10 +15,11 @@ func main() {
 	db := db.Connect()
 	authHandlers := handler.NewAuthHandler(db)
 	projectHandlers := handler.NewProjectHandler(db)
+	webHandler := handler.NewWebHandler()
 
 	router := mux.NewRouter()
 
-	routes.SetupRoutes(router, authHandlers, projectHandlers)
+	routes.SetupRoutes(router, authHandlers, projectHandlers, webHandler)
 
 	fmt.Println("Server avviato su :8080")
 	log.Fatal(http.ListenAndServe(":8080", router))
