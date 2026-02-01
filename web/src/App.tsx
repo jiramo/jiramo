@@ -1,22 +1,28 @@
-import './index.css'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import Layout from './components/Layout'
+import Overview from './pages/Overview'
+import Projects from './pages/Projects'
+import Analytics from './pages/Analytics'
+import Settings from './pages/Settings'
+import Profile from './pages/Profile'
+import Login from './pages/Login'
+import NotFound from './pages/NotFound'
 
 function App() {
   return (
-    <div style={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center', 
-      justifyContent: 'center', 
-      minHeight: '100vh',
-      padding: '2rem'
-    }}>
-      <h1 style={{ fontSize: '3rem', marginBottom: '1rem' }}>
-        Jiramo
-      </h1>
-      <p style={{ fontSize: '1.25rem', color: '#666' }}>
-        The #1 CRM built for developers
-      </p>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Overview />} />
+          <Route path="projects" element={<Projects />} />
+          <Route path="analytics" element={<Analytics />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="profile" element={<Profile />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
