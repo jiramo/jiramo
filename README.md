@@ -1,6 +1,6 @@
 <p align="center">
   </a>  <a href="https://jiramo.netlify.app/">
-    <img src="./web/public/logo.svg" width="100px" alt="Jiramo logo" />
+    <img src="./public/logo.svg" width="100px" alt="Jiramo logo" />
   </a>
 </p>
 
