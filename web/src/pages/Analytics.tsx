@@ -1,5 +1,7 @@
+import PagePlaceholder from '../components/PagePlaceholder'
+
 function Analytics() {
-  return <div>Analytics</div>
+  return <PagePlaceholder title="Analytics" />
 }
 
 export default Analytics

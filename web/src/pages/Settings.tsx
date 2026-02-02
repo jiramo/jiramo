@@ -1,5 +1,7 @@
+import PagePlaceholder from '../components/PagePlaceholder'
+
 function Settings() {
-  return <div>Settings</div>
+  return <PagePlaceholder title="Settings" />
 }
 
 export default Settings

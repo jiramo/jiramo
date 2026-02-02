@@ -1,5 +1,7 @@
+import PagePlaceholder from '../components/PagePlaceholder'
+
 function Projects() {
-  return <div>Projects</div>
+  return <PagePlaceholder title="Projects" />
 }
 
 export default Projects

@@ -1,5 +1,7 @@
+import PagePlaceholder from '../components/PagePlaceholder'
+
 function Profile() {
-  return <div>Profile</div>
+  return <PagePlaceholder title="Profile" />
 }
 
 export default Profile
