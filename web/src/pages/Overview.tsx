@@ -1,55 +1,13 @@
 import { useBreakpointValues } from '../hooks/useResponsive'
+import { Search, Bell, MoreHorizontal, List, LayoutGrid, Plus } from 'lucide-react'
 
 const icons = {
-  search: (
-    <svg className="w-4 h-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.35-4.35" />
-    </svg>
-  ),
-  notification: (
-    <svg className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
-    </svg>
-  ),
-  logo: (
-    <svg className="w-3.5 h-3.5" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M3.43323e-05 23.4634C3.43323e-05 24.568 0.896952 25.4716 1.99812 25.385C8.02024 24.9112 13.7033 22.3075 18.0054 18.0054C22.3075 13.7032 24.9112 8.02021 25.385 1.99809C25.4716 0.896919 24.568 3.8147e-06 23.4635 1.90735e-06H14.7317C13.6272 1.90735e-06 12.7478 0.900923 12.575 1.99189C12.157 4.63064 10.9157 7.0897 9.00271 9.00268C7.08973 10.9157 4.63067 12.157 1.99192 12.575C0.900957 12.7478 3.62396e-05 13.6271 3.62396e-05 14.7317L3.43323e-05 23.4634Z" fill="#F3EEDF"/>
-      <path d="M36 12.5366C36 11.432 35.1031 10.5284 34.002 10.615C27.9798 11.0888 22.2968 13.6925 17.9947 17.9946C13.6926 22.2968 11.0889 27.9798 10.6151 34.0019C10.5284 35.1031 11.4321 36 12.5366 36H21.2683C22.3729 36 23.2523 35.0991 23.4251 34.0081C23.843 31.3694 25.0844 28.9103 26.9974 26.9973C28.9103 25.0843 31.3694 23.843 34.0081 23.425C35.0991 23.2522 36 22.3729 36 21.2683V12.5366Z" fill="#F3EEDF"/>
-    </svg>
-  ),
-  moreOptions: (
-    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-      <circle cx="12" cy="5" r="2" />
-      <circle cx="12" cy="12" r="2" />
-      <circle cx="12" cy="19" r="2" />
-    </svg>
-  ),
-  listView: (
-    <svg className="w-4 h-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <line x1="8" y1="6" x2="21" y2="6" />
-      <line x1="8" y1="12" x2="21" y2="12" />
-      <line x1="8" y1="18" x2="21" y2="18" />
-      <line x1="3" y1="6" x2="3.01" y2="6" />
-      <line x1="3" y1="12" x2="3.01" y2="12" />
-      <line x1="3" y1="18" x2="3.01" y2="18" />
-    </svg>
-  ),
-  gridView: (
-    <svg className="w-4 h-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <rect x="3" y="3" width="7" height="7" />
-      <rect x="14" y="3" width="7" height="7" />
-      <rect x="14" y="14" width="7" height="7" />
-      <rect x="3" y="14" width="7" height="7" />
-    </svg>
-  ),
-  plus: (
-    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <line x1="12" y1="5" x2="12" y2="19" />
-      <line x1="5" y1="12" x2="19" y2="12" />
-    </svg>
-  ),
+  search: <Search className="w-4 h-4 text-gray-500" />,
+  notification: <Bell className="w-5 h-5 text-gray-400" />,
+  moreOptions: <MoreHorizontal className="w-4 h-4" />,
+  listView: <List className="w-4 h-4 text-gray-500" />,
+  gridView: <LayoutGrid className="w-4 h-4 text-gray-500" />,
+  plus: <Plus className="w-3.5 h-3.5" />,
 }
 
 // Responsive breakpoint configurations
@@ -142,7 +100,7 @@ function DeploymentRow({ name, author, status, borderColor }: { name: string; au
     <div className={`flex justify-between bg-dark-600 rounded-lg border border-dark-300 ${rowClasses}`}>
       <div className="flex items-center gap-3 flex-1">
         <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-dark-400 flex items-center justify-center shrink-0">
-          {icons.logo}
+          <img src="/logo.svg" alt="" className="w-3.5 h-3.5" />
         </div>
         <div className="flex flex-col">
           <h4 className="text-xs md:text-sm font-semibold text-white uppercase truncate">{name}</h4>
