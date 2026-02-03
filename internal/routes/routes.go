@@ -3,6 +3,7 @@ package routes
 import (
 	"jiramo/internal/handler"
 	"jiramo/internal/middleware"
+	"jiramo/internal/models"
 	"jiramo/internal/utils"
 	"net/http"
 
@@ -23,6 +24,7 @@ func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectH
 	// /projects - auth protected
 	projectRouter := router.PathPrefix("/projects").Subrouter()
 	projectRouter.Use(middleware.Auth)
+	projectRouter.Use(middleware.RequireRole(models.RoleUser, models.RoleAdmin))
 	projectRouter.HandleFunc("", projectHandlers.CreateProject).Methods("POST")
 
 	// PUBLIC
