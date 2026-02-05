@@ -1,12 +1,11 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import Layout from './components/Layout'
-import Overview from './pages/Overview'
-import Projects from './pages/Projects'
-import Analytics from './pages/Analytics'
-import Settings from './pages/Settings'
-import Profile from './pages/Profile'
-import Login from './pages/Login'
-import NotFound from './pages/NotFound'
+import Overview from './pages/overview'
+import Login from './pages/login'
+import Profile from './pages/profile'
+import Layout from './layouts/main'
+import Settings from './pages/settings'
+import Projects from './pages/projects'
+import NotFound from './pages/not-found'
 
 function App() {
   return (
@@ -16,8 +15,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<Layout />}>
             <Route index element={<Overview />} />
-            <Route path="projects" element={<Projects />} />
-            <Route path="analytics" element={<Analytics />} />
+            <Route path='projects' element={<Projects />} />
             <Route path="settings" element={<Settings />} />
             <Route path="profile" element={<Profile />} />
           </Route>
