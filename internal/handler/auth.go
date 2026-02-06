@@ -36,6 +36,10 @@ type LoginInput struct {
 	Password string `json:"password" validate:"required"`
 }
 
+type refreshRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -142,4 +146,68 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteJSON(w, http.StatusOK, resp)
+}
+
+func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("refresh_token")
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, "refresh token missing")
+		return
+	}
+
+	refreshToken := cookie.Value
+
+	var token models.Token
+	err = h.DB.
+		Preload("User").
+		Where("refresh_token = ?", refreshToken).
+		First(&token).Error
+
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, "invalid refresh token")
+		return
+	}
+
+	if time.Now().After(token.ExpiresAt) {
+		_ = h.DB.Delete(&token)
+		utils.WriteError(w, http.StatusUnauthorized, "refresh token expired")
+		return
+	}
+
+	accessToken, err := utils.GenerateAccessToken(token.User.ID, token.User.Role)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, "could not generate access token")
+		return
+	}
+
+	newRefreshToken := uuid.NewString()
+	newExpiry := time.Now().Add(30 * 24 * time.Hour)
+
+	token.RefreshToken = newRefreshToken
+	token.ExpiresAt = newExpiry
+
+	if err := h.DB.Model(&models.Token{}).
+		Where("id = ?", token.ID).
+		Updates(map[string]interface{}{
+			"refresh_token": newRefreshToken,
+			"expires_at":    newExpiry,
+		}).Error; err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, "could not rotate refresh token")
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    newRefreshToken,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		Path:     "/auth/refresh",
+		Expires:  newExpiry,
+	})
+
+	utils.WriteJSON(w, http.StatusOK, map[string]interface{}{
+		"access_token": accessToken,
+		"expires_in":   300, // 5 minutes
+	})
 }
