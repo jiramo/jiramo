@@ -5,8 +5,10 @@ import (
 	"jiramo/internal/models"
 	"jiramo/internal/utils"
 	"net/http"
+	"time"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -16,30 +18,38 @@ type AuthHandler struct {
 }
 
 func NewAuthHandler(db *gorm.DB) *AuthHandler {
-	return &AuthHandler{DB: db, Validate: validator.New()}
+	return &AuthHandler{
+		DB:       db,
+		Validate: validator.New(),
+	}
 }
 
 type RegisterInput struct {
-	Name     string `json:"name"`
-	Surname  string `json:"surname"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-type LoginInput struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Name     string `json:"name" validate:"required,min=2"`
+	Surname  string `json:"surname" validate:"required,min=2"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=6"`
 }
 
-func (h AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
+type LoginInput struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required"`
+}
+
+func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
 	var input RegisterInput
-	err := json.NewDecoder(r.Body).Decode(&input)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.Validate.Struct(input); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -50,6 +60,7 @@ func (h AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := models.User{
+		ID:           uuid.New(),
 		Name:         input.Name,
 		Surname:      input.Surname,
 		Email:        input.Email,
@@ -57,13 +68,20 @@ func (h AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		Role:         "user",
 	}
 
-	result := h.DB.Create(&user)
-	if result.Error != nil {
+	if err := h.DB.Create(&user).Error; err != nil {
 		http.Error(w, "User creation error", http.StatusInternalServerError)
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusCreated, user)
+	resp := map[string]interface{}{
+		"id":      user.ID,
+		"name":    user.Name,
+		"surname": user.Surname,
+		"email":   user.Email,
+		"role":    user.Role,
+	}
+
+	utils.WriteJSON(w, http.StatusCreated, resp)
 }
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
@@ -78,9 +96,13 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := h.Validate.Struct(input); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	var user models.User
-	result := h.DB.Where("email = ?", input.Email).First(&user)
-	if result.Error != nil {
+	if err := h.DB.Where("email = ?", input.Email).First(&user).Error; err != nil {
 		http.Error(w, "User not found", http.StatusUnauthorized)
 		return
 	}
@@ -90,14 +112,33 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := utils.GenerateJWT(user.ID.String(), user.Role)
+	accessToken, err := utils.GenerateAccessToken(user.ID, user.Role)
 	if err != nil {
-		http.Error(w, "Token generation error", http.StatusInternalServerError)
+		http.Error(w, "Access token generation error", http.StatusInternalServerError)
+		return
+	}
+
+	refreshToken, err := utils.GenerateRefreshToken(user.ID)
+	if err != nil {
+		http.Error(w, "Refresh token generation error", http.StatusInternalServerError)
+		return
+	}
+
+	userToken := models.Token{
+		ID:           uuid.New(),
+		UserID:       user.ID,
+		RefreshToken: refreshToken,
+		ExpiresAt:    time.Now().Add(utils.RefreshTokenExpiry),
+	}
+
+	if err := h.DB.Create(&userToken).Error; err != nil {
+		http.Error(w, "Could not save refresh token", http.StatusInternalServerError)
 		return
 	}
 
 	resp := map[string]string{
-		"token": token,
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
 	}
 
 	utils.WriteJSON(w, http.StatusOK, resp)

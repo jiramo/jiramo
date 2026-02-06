@@ -45,7 +45,7 @@ func Connect() *gorm.DB {
 	}
 
 	log.Println("Running migrations...")
-	db.AutoMigrate(&models.User{}, &models.Project{})
+	db.AutoMigrate(&models.User{}, &models.Project{}, &models.Token{})
 
 	return db
 }
