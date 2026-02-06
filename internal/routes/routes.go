@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectHandlers *handler.ProjectHandler, webHandler *handler.WebHandler) {
+func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectHandlers *handler.ProjectHandler, webHandler *handler.WebHandler, userHandlers *handler.UserHandler) {
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		utils.WriteJSON(w, http.StatusOK, "Hello from jiramo API")
 	})
@@ -22,13 +22,18 @@ func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectH
 	authRouter.HandleFunc("/register", authHandlers.Register).Methods("POST")
 	authRouter.HandleFunc("/login", authHandlers.Login).Methods("POST")
 
+	// /users
+	userRouter := router.PathPrefix("/users").Subrouter()
+	userRouter.Use(middleware.Auth)
+	userRouter.HandleFunc("/me", userHandlers.Me).Methods("GET")
+
 	// /projects - auth protected
 	projectRouter := router.PathPrefix("/projects").Subrouter()
 	projectRouter.Use(middleware.Auth)
 	projectRouter.Use(middleware.RequireRole(models.RoleUser, models.RoleAdmin))
 	projectRouter.HandleFunc("", projectHandlers.CreateProject).Methods("POST")
 
-	// PUBLIC
+	// PUBLIC API
 	router.HandleFunc("/projects/{id}/status", projectHandlers.ProjectStatus).Methods("GET")
 
 	// ERRORS
