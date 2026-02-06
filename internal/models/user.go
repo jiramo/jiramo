@@ -6,10 +6,16 @@ import (
 )
 
 type UserRole string
+type contextKey string
 
 const (
 	RoleUser  UserRole = "user"
 	RoleAdmin UserRole = "admin"
+)
+
+const (
+	UserIDKey   contextKey = "user_id"
+	UserRoleKey contextKey = "user_role"
 )
 
 type User struct {

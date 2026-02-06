@@ -10,13 +10,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type contextKey string
-
-const (
-	UserIDKey   contextKey = "user_id"
-	UserRoleKey contextKey = "user_role"
-)
-
 func Auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
@@ -49,10 +42,10 @@ func Auth(next http.Handler) http.Handler {
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
 			ctx := r.Context()
 			if userID, ok := claims["user_id"].(string); ok {
-				ctx = context.WithValue(ctx, UserIDKey, userID)
+				ctx = context.WithValue(ctx, models.UserIDKey, userID)
 			}
 			if role, ok := claims["role"].(string); ok {
-				ctx = context.WithValue(ctx, UserIDKey, models.UserRole(role))
+				ctx = context.WithValue(ctx, models.UserIDKey, models.UserRole(role))
 			}
 			r = r.WithContext(ctx)
 		}
@@ -65,7 +58,7 @@ func RequireRole(allowedRoles ...models.UserRole) func(http.Handler) http.Handle
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			//get user role and check if it's in the allowed roles passed to the func (if there are any)
-			role, ok := r.Context().Value(UserRoleKey).(models.UserRole)
+			role, ok := r.Context().Value(models.UserRoleKey).(models.UserRole)
 			if !ok {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return

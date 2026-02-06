@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"jiramo/internal/db"
 	"jiramo/internal/handler"
+	"jiramo/internal/middleware"
 	"jiramo/internal/routes"
 	"log"
 	"net/http"
@@ -19,6 +20,9 @@ func main() {
 	webHandler := handler.NewWebHandler()
 
 	router := mux.NewRouter()
+
+	router.Use(middleware.Recover)
+	router.Use(middleware.Logging)
 
 	routes.SetupRoutes(router, authHandlers, projectHandlers, webHandler, userHandler)
 
