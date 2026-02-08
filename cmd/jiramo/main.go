@@ -13,7 +13,8 @@ import (
 )
 
 func main() {
-	db := db.Connect()
+	db, _ := db.ConnectFromEnv()
+	setupHandler := handler.NewSetupHandler(db)
 	authHandlers := handler.NewAuthHandler(db)
 	projectHandlers := handler.NewProjectHandler(db)
 	userHandler := handler.NewUserHandler(db)
@@ -23,8 +24,9 @@ func main() {
 
 	router.Use(middleware.Recover)
 	router.Use(middleware.Logging)
+	router.Use(middleware.AppState)
 
-	routes.SetupRoutes(router, authHandlers, projectHandlers, webHandler, userHandler)
+	routes.SetupRoutes(router, authHandlers, projectHandlers, webHandler, userHandler, setupHandler)
 
 	fmt.Println("Server avviato su :8080")
 	log.Fatal(http.ListenAndServe(":8080", router))

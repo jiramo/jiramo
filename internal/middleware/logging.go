@@ -62,7 +62,6 @@ func (lrw *loggingResponseWriter) WriteHeader(code int) {
 	lrw.ResponseWriter.WriteHeader(code)
 }
 
-// colorForStatus restituisce un colore in base allo status code
 func colorForStatus(code int) string {
 	switch {
 	case code >= 200 && code < 300:

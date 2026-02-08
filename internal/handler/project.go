@@ -44,7 +44,6 @@ func (h *ProjectHandler) CreateProject(w http.ResponseWriter, r *http.Request) {
 		Description: input.Description,
 	}
 
-	// string -> uuid.UUID
 	customerUUID, err := uuid.Parse(input.CustomerId)
 	if err != nil {
 		http.Error(w, "Invalid CustomerId", http.StatusBadRequest)

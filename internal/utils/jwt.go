@@ -15,7 +15,6 @@ const (
 	Issuer             = "jiramo"
 )
 
-// GenerateAccessToken crea un JWT per l'access token (scadenza breve)
 func GenerateAccessToken(userID uuid.UUID, role models.UserRole) (string, error) {
 	claims := jwt.MapClaims{
 		"sub":  userID.String(),
@@ -29,14 +28,13 @@ func GenerateAccessToken(userID uuid.UUID, role models.UserRole) (string, error)
 	return token.SignedString([]byte(config.Global.JWT_SECRET))
 }
 
-// GenerateRefreshToken crea un JWT per il refresh token (scadenza lunga)
 func GenerateRefreshToken(userID uuid.UUID) (string, error) {
 	claims := jwt.MapClaims{
 		"sub": userID.String(),
 		"iat": time.Now().Unix(),
 		"exp": time.Now().Add(RefreshTokenExpiry).Unix(),
 		"iss": Issuer,
-		"jti": uuid.NewString(), // ID unico per revoca e tracciamento
+		"jti": uuid.NewString(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

@@ -10,11 +10,16 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectHandlers *handler.ProjectHandler, webHandler *handler.WebHandler, userHandlers *handler.UserHandler) {
+func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectHandlers *handler.ProjectHandler, webHandler *handler.WebHandler, userHandlers *handler.UserHandler, setupHandler *handler.SetupHandler) {
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		utils.WriteJSON(w, http.StatusOK, "Hello from jiramo API")
 	})
 	router.Handle("/", webHandler.UIHandler())
+
+	// /setup
+	setupRouter := router.PathPrefix("/setup").Subrouter()
+	setupRouter.HandleFunc("/db", setupHandler.DBSetup).Methods("POST")
+	setupRouter.HandleFunc("/admin", setupHandler.AdminSetup).Methods("POST")
 
 	// /auth
 	authRouter := router.PathPrefix("/auth").Subrouter()
