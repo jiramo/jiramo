@@ -23,7 +23,7 @@ func NewUserHandler(db *gorm.DB) *UserHandler {
 }
 
 func (h *UserHandler) Me(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("userID").(uuid.UUID)
+	userID, ok := r.Context().Value(models.UserIDKey).(uuid.UUID)
 	if !ok {
 		utils.WriteError(w, http.StatusUnauthorized, "user not authenticated")
 		return
