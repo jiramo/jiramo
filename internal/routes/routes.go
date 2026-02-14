@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectHandlers *handler.ProjectHandler, webHandler *handler.WebHandler, userHandlers *handler.UserHandler, setupHandler *handler.SetupHandler) {
+func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectHandlers *handler.ProjectHandler, webHandler *handler.WebHandler, userHandlers *handler.UserHandler, setupHandler *handler.SetupHandler, profileHandler *handler.ProfileHandler) {
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		utils.WriteJSON(w, http.StatusOK, "Hello from jiramo API")
 	})
@@ -31,6 +31,14 @@ func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectH
 	userRouter := router.PathPrefix("/users").Subrouter()
 	userRouter.Use(middleware.Auth)
 	userRouter.HandleFunc("/me", userHandlers.Me).Methods("GET")
+
+	// /profile - auth protected profile management
+	profileRouter := router.PathPrefix("/profile").Subrouter()
+	profileRouter.Use(middleware.Auth)
+	profileRouter.HandleFunc("", profileHandler.GetProfile).Methods("GET")
+	profileRouter.HandleFunc("", profileHandler.UpdateProfile).Methods("PUT", "PATCH")
+	profileRouter.HandleFunc("", profileHandler.DeleteProfile).Methods("DELETE")
+	profileRouter.HandleFunc("/password", profileHandler.ChangePassword).Methods("POST")
 
 	// /projects - auth protected
 	projectRouter := router.PathPrefix("/projects").Subrouter()

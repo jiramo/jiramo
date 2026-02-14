@@ -19,6 +19,7 @@ func main() {
 	projectHandlers := handler.NewProjectHandler(db)
 	userHandler := handler.NewUserHandler(db)
 	webHandler := handler.NewWebHandler()
+	profileHandlers := handler.NewProfileHandler(db)
 
 	router := mux.NewRouter()
 
@@ -26,8 +27,8 @@ func main() {
 	router.Use(middleware.Logging)
 	router.Use(middleware.AppState)
 
-	routes.SetupRoutes(router, authHandlers, projectHandlers, webHandler, userHandler, setupHandler)
+	routes.SetupRoutes(router, authHandlers, projectHandlers, webHandler, userHandler, setupHandler, profileHandlers)
 
-	fmt.Println("Server avviato su :8080")
+	fmt.Println("Server started on :8080")
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
