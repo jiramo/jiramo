@@ -13,13 +13,13 @@ import (
 )
 
 func main() {
-	db, _ := db.ConnectFromEnv()
-	setupHandler := handler.NewSetupHandler(db)
-	authHandlers := handler.NewAuthHandler(db)
-	projectHandlers := handler.NewProjectHandler(db)
-	userHandler := handler.NewUserHandler(db)
+	DB, _ := db.ConnectFromEnv()
+	setupHandler := handler.NewSetupHandler(DB)
+	authHandlers := handler.NewAuthHandler(DB)
+	projectHandlers := handler.NewProjectHandler(DB)
+	userHandler := handler.NewUserHandler(DB)
 	webHandler := handler.NewWebHandler()
-	profileHandlers := handler.NewProfileHandler(db)
+	profileHandlers := handler.NewProfileHandler(DB)
 
 	router := mux.NewRouter()
 
