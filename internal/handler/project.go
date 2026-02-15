@@ -39,9 +39,9 @@ func (h *ProjectHandler) CreateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	project := models.Project{
-		Title:       input.Title,
-		Description: input.Description,
+	if err := h.Validate.Struct(input); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	customerUUID, err := uuid.Parse(input.CustomerId)
@@ -49,11 +49,33 @@ func (h *ProjectHandler) CreateProject(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid CustomerId", http.StatusBadRequest)
 		return
 	}
-	project.CustomerID = customerUUID
+
+	var customerExists int64
+	if err := h.DB.Model(&models.User{}).Where("id = ?", customerUUID).Count(&customerExists).Error; err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, "database error")
+		return
+	}
+
+	if customerExists == 0 {
+		utils.WriteError(w, http.StatusNotFound, "customer not found")
+		return
+	}
+
+	project := models.Project{
+		ID:          uuid.New(),
+		Title:       input.Title,
+		Description: input.Description,
+		CustomerID:  customerUUID,
+		Status:      false,
+	}
 
 	if err := h.DB.Create(&project).Error; err != nil {
-		// utils.WriteError(w, http.StatusInternalServerError, fmt.Sprintf("Errore creazione progetto: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, "Error during creation")
+		return
+	}
+
+	if err := h.DB.Preload("Customer").First(&project, project.ID).Error; err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, "error loading project")
 		return
 	}
 
@@ -71,13 +93,18 @@ func (h *ProjectHandler) ProjectStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var project models.Project
-	if err := h.DB.First(&project, id).Error; err != nil {
+	if err := h.DB.Preload("Customer").First(&project, id).Error; err != nil {
 		http.Error(w, "Project not found", http.StatusNotFound)
 		return
 	}
 
-	resp := map[string]bool{
+	resp := map[string]any{
 		"status": project.Status,
+		"customer": map[string]string{
+			"name":    project.Customer.Name,
+			"surname": project.Customer.Surname,
+			"email":   project.Customer.Email,
+		},
 	}
 
 	utils.WriteJSON(w, http.StatusOK, resp)
