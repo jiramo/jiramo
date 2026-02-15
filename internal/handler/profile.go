@@ -35,40 +35,17 @@ type ChangePasswordInput struct {
 }
 
 func (h *ProfileHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	userID, ok := r.Context().Value(models.UserIDKey).(uuid.UUID)
-	if !ok {
-		utils.WriteError(w, http.StatusUnauthorized, "user not authenticated")
-		return
-	}
-
+	userID := r.Context().Value(models.UserIDKey).(uuid.UUID)
 	var user models.User
 	if err := h.DB.First(&user, "id = ?", userID).Error; err != nil {
 		utils.WriteError(w, http.StatusNotFound, "user not found")
 		return
 	}
 
-	response := map[string]any{
-		"ID":      user.ID,
-		"name":    user.Name,
-		"surname": user.Surname,
-		"email":   user.Email,
-		"role":    user.Role,
-	}
-
-	utils.WriteJSON(w, http.StatusOK, response)
+	utils.WriteJSON(w, http.StatusOK, user)
 }
 
 func (h *ProfileHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPut && r.Method != http.MethodPatch {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	userID, ok := r.Context().Value(models.UserIDKey).(uuid.UUID)
 	if !ok {
 		utils.WriteError(w, http.StatusUnauthorized, "invalid user ID")
@@ -126,30 +103,10 @@ func (h *ProfileHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := map[string]any{
-		"id":      user.ID,
-		"name":    user.Name,
-		"surname": user.Surname,
-		"email":   user.Email,
-		"role":    user.Role,
-		"message": "profile updated successfully",
-	}
-
-	utils.WriteJSON(w, http.StatusOK, response)
+	utils.WriteJSON(w, http.StatusOK, user)
 }
 
 func (h *ProfileHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	userID, ok := r.Context().Value(models.UserIDKey).(uuid.UUID)
-	if !ok {
-		utils.WriteError(w, http.StatusUnauthorized, "user not authenticated")
-		return
-	}
-
 	var input ChangePasswordInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		utils.WriteError(w, http.StatusBadRequest, "invalid JSON")
@@ -160,6 +117,7 @@ func (h *ProfileHandler) ChangePassword(w http.ResponseWriter, r *http.Request) 
 		utils.WriteError(w, http.StatusBadRequest, err.Error())
 	}
 
+	userID := r.Context().Value(models.UserIDKey).(uuid.UUID)
 	var user models.User
 	if err := h.DB.First(&user, "id = ?", userID).Error; err != nil {
 		utils.WriteError(w, http.StatusNotFound, "user not found")
@@ -182,17 +140,10 @@ func (h *ProfileHandler) ChangePassword(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, map[string]string{
-		"message": "password changed successfully",
-	})
+	utils.WriteJSON(w, http.StatusOK, nil)
 }
 
 func (h *ProfileHandler) DeleteProfile(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodDelete {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	userID, ok := r.Context().Value(models.UserIDKey).(uuid.UUID)
 	if !ok {
 		utils.WriteError(w, http.StatusUnauthorized, "user not authenticated")
@@ -224,7 +175,5 @@ func (h *ProfileHandler) DeleteProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, map[string]string{
-		"message": "account deleted successfully",
-	})
+	utils.WriteJSON(w, http.StatusNoContent, nil)
 }
