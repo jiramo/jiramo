@@ -44,6 +44,7 @@ func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectH
 	projectRouter := router.PathPrefix("/projects").Subrouter()
 	projectRouter.Use(middleware.Auth)
 	projectRouter.Use(middleware.RequireRole(models.RoleUser, models.RoleAdmin))
+	projectRouter.HandleFunc("", projectHandlers.GetProjects).Methods("GET")
 	projectRouter.HandleFunc("", projectHandlers.CreateProject).Methods("POST")
 
 	// PUBLIC API

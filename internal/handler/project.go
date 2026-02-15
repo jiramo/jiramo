@@ -5,6 +5,7 @@ import (
 	"jiramo/internal/models"
 	"jiramo/internal/utils"
 	"net/http"
+	"strconv"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
@@ -25,6 +26,42 @@ type ProjectInput struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	CustomerId  string `json:"customer_id"`
+}
+
+func (h *ProjectHandler) GetProjects(w http.ResponseWriter, r *http.Request) {
+	pageStr := r.URL.Query().Get("page")
+	limitStr := r.URL.Query().Get("limit")
+
+	page := 1
+	limit := 10
+
+	if pageStr != "" {
+		p, err := strconv.Atoi(pageStr)
+		if err != nil || p <= 0 {
+			utils.WriteError(w, http.StatusBadRequest, "Invalid 'page' parameter")
+			return
+		}
+		page = p
+	}
+
+	if limitStr != "" {
+		l, err := strconv.Atoi(limitStr)
+		if err != nil || l <= 0 {
+			utils.WriteError(w, http.StatusBadRequest, "Invalid 'limit' parameter")
+			return
+		}
+		limit = l
+	}
+
+	offset := (page - 1) * limit
+
+	var projects []models.Project
+	if err := h.DB.Limit(limit).Offset(offset).Find(&projects).Error; err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, "Failed to retrieve projects")
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, projects)
 }
 
 func (h *ProjectHandler) CreateProject(w http.ResponseWriter, r *http.Request) {
