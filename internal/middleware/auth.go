@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 func Auth(next http.Handler) http.Handler {
@@ -41,11 +42,13 @@ func Auth(next http.Handler) http.Handler {
 
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
 			ctx := r.Context()
-			if userID, ok := claims["user_id"].(string); ok {
-				ctx = context.WithValue(ctx, models.UserIDKey, userID)
+			if userID, ok := claims["sub"].(string); ok {
+				if uid, err := uuid.Parse(userID); err == nil {
+					ctx = context.WithValue(ctx, models.UserIDKey, uid)
+				}
 			}
 			if role, ok := claims["role"].(string); ok {
-				ctx = context.WithValue(ctx, models.UserIDKey, models.UserRole(role))
+				ctx = context.WithValue(ctx, models.UserRoleKey, models.UserRole(role))
 			}
 			r = r.WithContext(ctx)
 		}
