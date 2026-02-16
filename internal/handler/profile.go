@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"jiramo/internal/models"
 	"jiramo/internal/utils"
 	"net/http"
@@ -35,10 +36,9 @@ type ChangePasswordInput struct {
 }
 
 func (h *ProfileHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value(models.UserIDKey).(uuid.UUID)
-	var user models.User
-	if err := h.DB.First(&user, "id = ?", userID).Error; err != nil {
-		utils.WriteError(w, http.StatusNotFound, "user not found")
+	user, err := h.getCurrentUser(r)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, "user not authenticated")
 		return
 	}
 
@@ -46,134 +46,172 @@ func (h *ProfileHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ProfileHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(models.UserIDKey).(uuid.UUID)
-	if !ok {
+	userID, err := h.getUserID(r)
+	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, "invalid user ID")
 		return
 	}
 
 	var input UpdateProfileInput
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, "invalid JSON")
-		return
-	}
-
-	if err := h.Validate.Struct(input); err != nil {
+	if err := h.decodeAndValidate(r, &input); err != nil {
 		utils.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	var user models.User
-	if err := h.DB.First(&user, "id = ?", userID).Error; err != nil {
+	user, err := h.findUserByID(userID)
+	if err != nil {
 		utils.WriteError(w, http.StatusNotFound, "user not found")
 		return
 	}
 
 	if input.Email != "" && input.Email != user.Email {
-		var existingUser models.User
-		if err := h.DB.Where("email = ? AND id != ?", input.Email, userID).First(&existingUser).Error; err == nil {
+		if err := utils.CheckEmailUnique(h.DB, input.Email, userID); err != nil {
 			utils.WriteError(w, http.StatusConflict, "email already in use")
 			return
 		}
 	}
 
-	updates := make(map[string]any)
-	if input.Name != "" {
-		updates["name"] = input.Name
-	}
-	if input.Surname != "" {
-		updates["surname"] = input.Surname
-	}
-	if input.Email != "" {
-		updates["email"] = input.Email
-	}
+	updates := utils.BuildUpdateMap(map[string]interface{}{
+		"name":    input.Name,
+		"surname": input.Surname,
+		"email":   input.Email,
+	})
 
 	if len(updates) == 0 {
 		utils.WriteError(w, http.StatusBadRequest, "no fields to update")
 		return
 	}
 
-	if err := h.DB.Model(&user).Updates(updates).Error; err != nil {
+	if err := h.updateUser(user, updates); err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, "failed to update profile")
 		return
 	}
 
-	if err := h.DB.First(&user, "id = ?", userID).Error; err != nil {
+	updatedUser, err := h.findUserByID(userID)
+	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, "failed to retrieve updated profile")
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, user)
+	utils.WriteJSON(w, http.StatusOK, updatedUser)
 }
 
 func (h *ProfileHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
-	var input ChangePasswordInput
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, "invalid JSON")
+	userID, err := h.getUserID(r)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, "user not authenticated")
 		return
 	}
 
-	if err := h.Validate.Struct(input); err != nil {
+	var input ChangePasswordInput
+	if err := h.decodeAndValidate(r, &input); err != nil {
 		utils.WriteError(w, http.StatusBadRequest, err.Error())
+		return
 	}
 
-	userID := r.Context().Value(models.UserIDKey).(uuid.UUID)
-	var user models.User
-	if err := h.DB.First(&user, "id = ?", userID).Error; err != nil {
+	user, err := h.findUserByID(userID)
+	if err != nil {
 		utils.WriteError(w, http.StatusNotFound, "user not found")
 		return
 	}
 
-	if !utils.CheckPasswordHash(input.CurrentPassword, user.PasswordHash) {
+	if err := utils.VerifyPassword(input.CurrentPassword, user.PasswordHash); err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, "current password is incorrect")
 		return
 	}
 
-	hashedPassword, err := utils.HashPassword(input.NewPassword)
+	hashedPassword, err := utils.HashPasswordSafe(input.NewPassword)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, "failed to hash password")
 		return
 	}
 
-	if err := h.DB.Model(&models.User{}).Where("id = ?", userID).Update("password_hash", hashedPassword).Error; err != nil {
+	if err := h.updatePassword(userID, hashedPassword); err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, "failed to update password")
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, nil)
+	utils.WriteJSON(w, http.StatusOK, map[string]string{
+		"message": "password updated successfully",
+	})
 }
 
 func (h *ProfileHandler) DeleteProfile(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(models.UserIDKey).(uuid.UUID)
-	if !ok {
+	userID, err := h.getUserID(r)
+	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, "user not authenticated")
 		return
 	}
 
-	var user models.User
-	if err := h.DB.First(&user, "id = ?", userID).Error; err != nil {
+	user, err := h.findUserByID(userID)
+	if err != nil {
 		utils.WriteError(w, http.StatusNotFound, "user not found")
 		return
 	}
 
-	//last admin account should not be deleted
-	if user.Role == models.RoleAdmin {
-		var adminCount int64
-		if err := h.DB.Model(&models.User{}).Where("role = ?", models.RoleAdmin).Count(&adminCount).Error; err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, "failed to check admin count")
-			return
-		}
-
-		if adminCount <= 1 {
-			utils.WriteError(w, http.StatusForbidden, "cannot delete the last admin account")
-			return
-		}
+	isLastAdmin, err := utils.CheckLastAdmin(h.DB, user)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, "failed to check admin count")
+		return
 	}
 
-	if err := h.DB.Delete(&user).Error; err != nil {
+	if isLastAdmin {
+		utils.WriteError(w, http.StatusForbidden, "cannot delete the last admin account")
+		return
+	}
+
+	if err := h.deleteUser(user); err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, "failed to delete account")
 		return
 	}
 
 	utils.WriteJSON(w, http.StatusNoContent, nil)
+}
+
+func (h *ProfileHandler) getUserID(r *http.Request) (uuid.UUID, error) {
+	userID, ok := r.Context().Value(models.UserIDKey).(uuid.UUID)
+	if !ok {
+		return uuid.Nil, errors.New("invalid user ID in context")
+	}
+	return userID, nil
+}
+
+func (h *ProfileHandler) getCurrentUser(r *http.Request) (*models.User, error) {
+	userID, err := h.getUserID(r)
+	if err != nil {
+		return nil, err
+	}
+	return h.findUserByID(userID)
+}
+
+func (h *ProfileHandler) findUserByID(userID uuid.UUID) (*models.User, error) {
+	var user models.User
+	if err := h.DB.First(&user, "id = ?", userID).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (h *ProfileHandler) decodeAndValidate(r *http.Request, input interface{}) error {
+	if err := json.NewDecoder(r.Body).Decode(input); err != nil {
+		return errors.New("invalid JSON")
+	}
+	if err := h.Validate.Struct(input); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (h *ProfileHandler) updateUser(user *models.User, updates map[string]interface{}) error {
+	return h.DB.Model(user).Updates(updates).Error
+}
+
+func (h *ProfileHandler) updatePassword(userID uuid.UUID, hashedPassword string) error {
+	return h.DB.Model(&models.User{}).
+		Where("id = ?", userID).
+		Update("password_hash", hashedPassword).Error
+}
+
+func (h *ProfileHandler) deleteUser(user *models.User) error {
+	return h.DB.Delete(user).Error
 }
