@@ -22,7 +22,7 @@ func CheckLastAdmin(db *gorm.DB, user *models.User) (bool, error) {
 
 	var adminCount int64
 	if err := db.Model(&models.User{}).Where("role = ?", models.RoleAdmin).Count(&adminCount).Error; err != nil {
-		return flase, err
+		return false, err
 	}
 
 	return adminCount <= 1, nil
@@ -46,4 +46,5 @@ func BuildUpdateMap(fields map[string]any) map[string]any {
 			}
 		}
 	}
+	return updates
 }
