@@ -27,10 +27,19 @@ func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectH
 	authRouter.HandleFunc("/register", authHandlers.Register).Methods("POST")
 	authRouter.HandleFunc("/login", authHandlers.Login).Methods("POST")
 
-	// /users
+	// /users - user management
 	userRouter := router.PathPrefix("/users").Subrouter()
 	userRouter.Use(middleware.Auth)
-	userRouter.HandleFunc("/me", userHandlers.Me).Methods("GET")
+
+	// user endpoint - accessible by every authenticated user
+	userRouter.Handle("/me", middleware.RequireRole(models.RoleUser, models.RoleAdmin)(http.HandlerFunc(userHandlers.Me))).Methods("GET")
+
+	//admin only endpoints
+	userRouter.Handle("", middleware.RequireRole(models.RoleAdmin)(http.HandlerFunc(userHandlers.ListUsers))).Methods("GET")
+	userRouter.Handle("", middleware.RequireRole(models.RoleAdmin)(http.HandlerFunc(userHandlers.CreateUser))).Methods("POST")
+	userRouter.Handle("/{id}", middleware.RequireRole(models.RoleAdmin)(http.HandlerFunc(userHandlers.GetUserByID))).Methods("GET")
+	userRouter.Handle("/{id}", middleware.RequireRole(models.RoleAdmin)(http.HandlerFunc(userHandlers.UpdateUserByID))).Methods("PUT", "PATCH")
+	userRouter.Handle("/{id}", middleware.RequireRole(models.RoleAdmin)(http.HandlerFunc(userHandlers.DeleteUserByID))).Methods("DELETE")
 
 	// /profile - auth protected profile management
 	profileRouter := router.PathPrefix("/profile").Subrouter()
