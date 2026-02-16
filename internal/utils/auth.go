@@ -2,8 +2,6 @@ package utils
 
 import (
 	"errors"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -13,7 +11,7 @@ var (
 
 func VerifyPassword(password, hash string) error {
 	if !CheckPasswordHash(password, hash) {
-		return ErrPasswordHash
+		return ErrPasswordMismatch
 	}
 	return nil
 }
