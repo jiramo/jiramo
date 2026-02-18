@@ -53,22 +53,19 @@ func (h *ProfileHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var input UpdateProfileInput
-	if err := h.decodeAndValidate(r, &input); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err.Error())
-		return
-	}
+	user, err := validateUserUpdate(h, h.DB, r, userID, &input)
 
-	user, err := h.findUserByID(userID)
 	if err != nil {
-		utils.WriteError(w, http.StatusNotFound, "user not found")
-		return
-	}
+		status := http.StatusBadRequest
 
-	if input.Email != "" && input.Email != user.Email {
-		if err := utils.CheckEmailUnique(h.DB, input.Email, userID); err != nil {
-			utils.WriteError(w, http.StatusConflict, "email already in use")
-			return
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			status = http.StatusNotFound
+		} else if errors.Is(err, utils.ErrEmailAlreadyUsed) {
+			status = http.StatusConflict
 		}
+
+		utils.WriteError(w, status, err.Error())
+		return
 	}
 
 	updates := utils.BuildUpdateMap(map[string]interface{}{

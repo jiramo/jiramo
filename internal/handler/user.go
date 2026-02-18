@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"jiramo/internal/models"
 	"jiramo/internal/utils"
 	"net/http"
@@ -16,6 +17,13 @@ import (
 type UserHandler struct {
 	DB       *gorm.DB
 	Validate *validator.Validate
+}
+
+type UpdateUserInput struct {
+	Name    string          `json:"name" validate:"omitempty,min=2"`
+	Surname string          `json:"surname" validate:"omitempty,min=2"`
+	Email   string          `json:"email" validate:"omitempty,email"`
+	Role    models.UserRole `json:"role" validate:"omitempty,oneof=user admin"`
 }
 
 func NewUserHandler(db *gorm.DB) *UserHandler {
@@ -132,33 +140,24 @@ func (h *UserHandler) UpdateUserByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	type UpdateUserInput struct {
-		Name    string          `json:"name" validate:"omitempty,min=2"`
-		Surname string          `json:"surname" validate:"omitempty,min=2"`
-		Email   string          `json:"email" validate:"omitempty,email"`
-		Role    models.UserRole `json:"role" validate:"omitempty,oneof=user admin"`
-	}
-
 	var input UpdateUserInput
-	if err := h.decodeAndValidate(r, &input); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err.Error())
-		return
-	}
+	user, err := validateUserUpdate(h, h.DB, r, userID, &input)
 
-	user, err := h.findUserByID(userID)
 	if err != nil {
-		utils.WriteError(w, http.StatusNotFound, "user not found")
-		return
-	}
-
-	if input.Email != "" && input.Email != user.Email {
-		if err := utils.CheckEmailUnique(h.DB, input.Email, userID); err != nil {
-			utils.WriteError(w, http.StatusConflict, "email already in use")
+		status := http.StatusBadRequest
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			status = http.StatusNotFound
+		} else if errors.Is(err, gorm.ErrDuplicatedKey) {
+			status = http.StatusConflict
+		} else if errors.Is(err, utils.ErrEmailAlreadyUsed) {
+			utils.WriteError(w, http.StatusConflict, err.Error())
 			return
 		}
+		utils.WriteError(w, status, err.Error())
+		return
 	}
 
-	updates := utils.BuildUpdateMap(map[string]interface{}{
+	updates := utils.BuildUpdateMap(map[string]any{
 		"name":    input.Name,
 		"surname": input.Surname,
 		"email":   input.Email,
@@ -191,20 +190,9 @@ func (h *UserHandler) DeleteUserByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.findUserByID(userID)
+	user, err := prepareUserDeletion(h.findUserByID, h.DB, userID)
 	if err != nil {
-		utils.WriteError(w, http.StatusNotFound, "user not found")
-		return
-	}
-
-	isLastAdmin, err := utils.CheckLastAdmin(h.DB, user)
-	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, "failed to check admin count")
-		return
-	}
-
-	if isLastAdmin {
-		utils.WriteError(w, http.StatusForbidden, "cannot delete the last admin account")
+		writeHTTPError(w, err)
 		return
 	}
 
