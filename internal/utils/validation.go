@@ -1,18 +1,29 @@
 package utils
 
 import (
+	"errors"
 	"jiramo/internal/models"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
-func CheckEmailUnique(db *gorm.DB, email string, excludeUSERID uuid.UUID) error {
+var ErrEmailAlreadyUsed = errors.New("email already in use")
+var ErrPermissionDenied = errors.New("permission denied")
+
+func CheckEmailUnique(db *gorm.DB, email string, excludeUserID uuid.UUID) error {
 	var existingUser models.User
-	if err := db.Where("email = ? AND id != ?", email, excludeUSERID).First(&existingUser).Error; err == nil {
-		return gorm.ErrDuplicatedKey
+
+	err := db.Where("email = ? AND id = ?", email, excludeUserID).First(&existingUser).Error
+	if err == nil {
+		return ErrEmailAlreadyUsed
 	}
-	return nil
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil
+	}
+
+	return err
 }
 
 func CheckLastAdmin(db *gorm.DB, user *models.User) (bool, error) {
