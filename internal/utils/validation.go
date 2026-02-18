@@ -14,7 +14,7 @@ var ErrPermissionDenied = errors.New("permission denied")
 func CheckEmailUnique(db *gorm.DB, email string, excludeUserID uuid.UUID) error {
 	var existingUser models.User
 
-	err := db.Where("email = ? AND id = ?", email, excludeUserID).First(&existingUser).Error
+	err := db.Where("email = ? AND id != ?", email, excludeUserID).First(&existingUser).Error
 	if err == nil {
 		return ErrEmailAlreadyUsed
 	}
