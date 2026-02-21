@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useBreakpointValues } from '../hooks/useResponsive'
 import { Search, Bell, MoreHorizontal, List, LayoutGrid, Plus } from 'lucide-react'
 
@@ -27,6 +28,7 @@ const responsiveConfig = {
 }
 
 function Header() {
+  const [searchQuery, setSearchQuery] = useState('')
   const headerConfig = useBreakpointValues(responsiveConfig.headerLayout)
   const titleConfig = useBreakpointValues(responsiveConfig.headerTitle)
   const searchConfig = useBreakpointValues(responsiveConfig.headerSearch)
@@ -36,10 +38,16 @@ function Header() {
       <h1 className={`font-medium text-white mb-0 ${titleConfig}`}>Welcome back Marco</h1>
 
       <div className="flex items-center gap-3 flex-1 justify-end">
-        <div className={`flex items-center bg-dark-500 rounded-lg border border-dark-200 w-full max-w-[280px] md:max-w-[360px] lg:max-w-[450px] ${searchConfig}`}>
+        <div className={`flex items-center bg-dark-500 rounded-lg border border-dark-200 w-full max-w-[280px] md:max-w-[360px] lg:max-w-[450px] cursor-text ${searchConfig}`}>
           {icons.search}
-          <span className="text-gray-500 ml-3 text-sm flex-1">Search</span>
-          <span className="text-gray-600 text-xs border border-dark-200 rounded px-1.5 py-0.5">Ctrl K</span>
+          <input
+            type="text"
+            placeholder="Search"
+            value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value) }}
+            className="bg-transparent border-0 text-white placeholder-gray-500 focus:outline-none w-full text-sm ml-3"
+          />
+          <span className="text-gray-600 text-xs border border-dark-200 rounded px-1.5 py-0.5 ml-2">Ctrl K</span>
         </div>
 
         <button className="w-10 h-10 rounded-lg bg-dark-500 border border-dark-200 flex items-center justify-center cursor-pointer shrink-0 hover:border-gray-600 transition-colors">
