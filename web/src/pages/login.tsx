@@ -46,7 +46,7 @@ export default function Login() {
       >
 
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-linear-to-br from-[#FF6900] to-[#FF4422] shadow-lg shadow-orange-500/20 mb-4">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-linear-to-br from-[#FF6900] to-[#FF4422] shadow-lg shadow-[#FF6900]/20 mb-4">
             <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
@@ -137,7 +137,7 @@ export default function Login() {
               bg-[#FF6900] hover:bg-[#ff7b1a] active:bg-[#e65e00]
               text-white text-sm font-semibold
               rounded-xl
-              shadow-lg shadow-orange-500/20
+              shadow-lg shadow-[#FF6900]/20
               transition-all duration-200
               disabled:opacity-70 disabled:cursor-not-allowed
             "

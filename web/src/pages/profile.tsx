@@ -75,7 +75,7 @@ export default function Profile() {
             <div className="relative flex flex-col md:flex-row items-center gap-6 mb-8 z-10">
 
               <div className="relative group cursor-pointer shrink-0">
-                <div className="h-24 w-24 md:h-28 md:w-28 rounded-full bg-linear-to-br from-[#FF6900] to-[#ff9100] flex items-center justify-center text-3xl font-bold text-white shadow-xl shadow-orange-500/20 ring-4 ring-[#0A0A0A]">
+                <div className="h-24 w-24 md:h-28 md:w-28 rounded-full bg-linear-to-br from-[#FF6900] to-[#ff9100] flex items-center justify-center text-3xl font-bold text-white shadow-xl shadow-[#FF6900]/20 ring-4 ring-[#0A0A0A]">
                   MR
                 </div>
                 <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-[2px]">

@@ -74,7 +74,7 @@ export default function Button({
 
   const baseVariantClasses: Record<ButtonVariant, string> = {
     primary:
-      "bg-orange-500 text-black border border-orange-500 hover:bg-black hover:text-white hover:border-white/20",
+      "bg-[#FF6900] text-black border border-[#FF6900] hover:bg-black hover:text-white hover:border-white/20",
     secondary:
       "bg-white text-black border border-white hover:bg-black hover:text-white hover:border-white",
     outline:
