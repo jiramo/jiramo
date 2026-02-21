@@ -3,49 +3,54 @@ package db
 import (
 	"fmt"
 	"log"
-	"time"
 
-	"jiramo/internal/config"
 	"jiramo/internal/models"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-func Connect() *gorm.DB {
+func Connect(user, host, password, name, port string) (*gorm.DB, error) {
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-		config.Global.DB_USER,
-		config.Global.DB_HOST,
-		config.Global.DB_PASSWORD,
-		config.Global.DB_NAME,
-		config.Global.DB_PORT,
+		host,
+		user,
+		password,
+		name,
+		port,
 	)
 
-	var db *gorm.DB
-	var err error
-
-	// Retry 5 times with a 2-second delay.
-	counts := 0
-	for {
-		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
-		if err == nil {
-			log.Println("Database connected successfully!")
-			break
-		}
-
-		log.Printf("Postgres not ready yet (count %d)... waiting 2 seconds. Error: %v\n", counts, err)
-		counts++
-
-		if counts > 5 {
-			log.Fatal(err)
-		}
-
-		time.Sleep(2 * time.Second)
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		models.AppState = models.NoDB
+		return nil, err
 	}
 
-	log.Println("Running migrations...")
-	db.AutoMigrate(&models.User{}, &models.Project{})
+	log.Println("Database connected successfully")
 
-	return db
+	log.Println("Running migrations...")
+	if err := db.AutoMigrate(
+		&models.User{},
+		&models.Project{},
+		&models.Token{},
+	); err != nil {
+		models.AppState = models.NoDB
+		return nil, err
+	}
+
+	adminExists, err := AdminExists(db)
+	if err != nil {
+		models.AppState = models.NoDB
+		return nil, err
+	}
+
+	if adminExists {
+		models.AppState = models.Ready
+		log.Println("Application state: READY")
+	} else {
+		models.AppState = models.NoAdmin
+		log.Println("Application state: NO ADMIN")
+	}
+
+	return db, nil
 }

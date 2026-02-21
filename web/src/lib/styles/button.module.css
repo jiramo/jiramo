@@ -1,0 +1,51 @@
+@keyframes patternMove {
+  0% {
+    transform: translateX(-20px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.patternLayer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  
+  width: 200%;
+  background-size: 20px 20px;
+  will-change: transform;
+}
+
+.animate {
+  animation: patternMove 0.5s linear infinite;
+}
+
+.whiteStripes {
+  background-image: linear-gradient(
+    45deg,
+    transparent 40%,
+    white 40%,
+    white 50%,
+    transparent 50%,
+    transparent 90%,
+    white 90%,
+    white 100%
+  );
+  background-size: 10px 10px;
+}
+
+.blackStripes {
+  background-image: linear-gradient(
+    45deg,
+    transparent 40%,
+    black 40%,
+    black 50%,
+    transparent 50%,
+    transparent 90%,
+    black 90%,
+    black 100%
+  );
+  background-size: 10px 10px;
+}

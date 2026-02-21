@@ -1,11 +1,14 @@
 package middleware
 
 import (
+	"context"
 	"jiramo/internal/config"
+	"jiramo/internal/models"
 	"net/http"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 func Auth(next http.Handler) http.Handler {
@@ -37,6 +40,41 @@ func Auth(next http.Handler) http.Handler {
 			return
 		}
 
+		if claims, ok := token.Claims.(jwt.MapClaims); ok {
+			ctx := r.Context()
+			if userID, ok := claims["sub"].(string); ok {
+				if uid, err := uuid.Parse(userID); err == nil {
+					ctx = context.WithValue(ctx, models.UserIDKey, uid)
+				}
+			}
+			if role, ok := claims["role"].(string); ok {
+				ctx = context.WithValue(ctx, models.UserRoleKey, models.UserRole(role))
+			}
+			r = r.WithContext(ctx)
+		}
+
 		next.ServeHTTP(w, r)
 	})
+}
+
+func RequireRole(allowedRoles ...models.UserRole) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			//get user role and check if it's in the allowed roles passed to the func (if there are any)
+			role, ok := r.Context().Value(models.UserRoleKey).(models.UserRole)
+			if !ok {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			for _, allowedRole := range allowedRoles {
+				if role == allowedRole {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+
+			http.Error(w, "Forbidden", http.StatusForbidden)
+		})
+	}
 }

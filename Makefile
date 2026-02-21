@@ -18,7 +18,7 @@ build-backend:
 	CGO_ENABLED=0 go build -o $(BINARY_FOLDER)/$(BINARY_NAME) $(CMD_DIR)/main.go
 
 dev:
-	docker-compose up --build
+	docker compose up --build
 
 run: build
 	APP_ENV=production \
