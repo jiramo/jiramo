@@ -32,3 +32,5 @@ Thumbs.db
 
 # env
 *.env
+.env.db
+.dbconfig.json
