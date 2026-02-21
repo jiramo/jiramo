@@ -1,5 +1,5 @@
 services:
-  # 1. Il Backend Go
+
   backend:
     build:
       context: .
@@ -7,21 +7,21 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./:/app # Montiamo il codice locale dentro il container
+      - ./:/app
     environment:
       - APP_ENV=dev
       - FRONTEND_URL=http://frontend:5173
-      - DB_HOST=postgres
-      - DB_USER=postgres
-      - DB_PASSWORD=password
-      - DB_NAME=gotype
-      - DB_PORT=5432
+      # DB credentials removed to use setup wizard
+      # - DB_HOST=postgres
+      # - DB_USER=postgres
+      # - DB_PASSWORD=password
+      # - DB_NAME=gotype
+      # - DB_PORT=5432
       - JWT_SECRET=dev_secret_key
     depends_on:
       - postgres
       - frontend
 
-  # 2. Il Frontend React/Vite
   frontend:
     image: node:20-alpine
     working_dir: /app
@@ -37,13 +37,14 @@ services:
     stdin_open: true
     tty: true
 
-  # 3. Database Postgres
   postgres:
     image: postgres:15-alpine
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=gotype
+      # environment vars or trust mode
+      - POSTGRES_HOST_AUTH_METHOD=${POSTGRES_HOST_AUTH_METHOD:-trust}
+      - POSTGRES_DB=${POSTGRES_DB:-postgres}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-}
     ports:
       - "5432:5432"
     volumes:
