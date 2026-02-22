@@ -11,14 +11,24 @@ import (
 )
 
 func Connect(user, host, password, name, port string) (*gorm.DB, error) {
-	dsn := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-		host,
-		user,
-		password,
-		name,
-		port,
-	)
+	// First check and create the database if it does not exist
+	if err := ensureDatabaseExists(user, host, password, name, port); err != nil {
+		log.Printf("Warning: could not create database: %v", err)
+	}
+
+	// Build DSN with or without a password
+	var dsn string
+	if password == "" {
+		dsn = fmt.Sprintf(
+			"host=%s user=%s dbname=%s port=%s sslmode=disable",
+			host, user, name, port,
+		)
+	} else {
+		dsn = fmt.Sprintf(
+			"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+			host, user, password, name, port,
+		)
+	}
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {

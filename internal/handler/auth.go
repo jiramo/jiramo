@@ -111,6 +111,11 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if user.Role != models.RoleAdmin {
+		http.Error(w, "Access denied: admin only", http.StatusForbidden)
+		return
+	}
+
 	if !utils.CheckPasswordHash(input.Password, user.PasswordHash) {
 		http.Error(w, "Incorrect password", http.StatusUnauthorized)
 		return

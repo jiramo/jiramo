@@ -18,6 +18,7 @@ func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectH
 
 	// /setup
 	setupRouter := router.PathPrefix("/setup").Subrouter()
+	setupRouter.HandleFunc("/status", setupHandler.Status).Methods("GET")
 	setupRouter.HandleFunc("/db", setupHandler.DBSetup).Methods("POST")
 	setupRouter.HandleFunc("/admin", setupHandler.AdminSetup).Methods("POST")
 
