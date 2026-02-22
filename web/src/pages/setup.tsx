@@ -1,13 +1,49 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 type SetupStep = 'db' | 'admin';
+
+interface SetupStatusResponse {
+  state: "no_db" | "no_admin" | "ready";
+}
 
 export default function Setup() {
   const [step, setStep] = useState<SetupStep>('db');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+
+    useEffect(() => {
+    async function fetchSetupStatus() {
+      try {
+        const response = await fetch("/setup/status");
+        if (!response.ok) {
+          throw new Error(`Failed to fetch setup status: ${response.status}`);
+        }
+
+        const data: SetupStatusResponse = await response.json();
+
+        switch (data.state) {
+          case "no_db":
+            setStep("db");
+            break;
+          case "no_admin":
+            setStep("admin");
+            break;
+          case "ready":
+            break;
+          default:
+            throw new Error(`Unknown app state: ${data.state}`);
+        }
+      } catch (err: any) {
+        console.error(err);
+        setError(err.message || "Unknown error");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchSetupStatus();
+  }, []);
 
   const handleDBSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -198,7 +234,7 @@ export default function Setup() {
             <button 
               type="submit"
               disabled={isLoading}
-              className="relative w-full py-3 mt-2 px-6 bg-gradient-to-r from-[#FF6900] to-[#FF4422] text-white font-semibold rounded-xl shadow-lg shadow-[#FF6900]/25 hover:shadow-xl hover:shadow-[#FF6900]/40 focus:ring-2 focus:ring-[#FF6900] focus:ring-offset-2 focus:ring-offset-[#0A0A0A] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              className="relative w-full py-3 mt-2 px-6 bg-linear-to-r from-[#FF6900] to-[#FF4422] text-white font-semibold rounded-xl shadow-lg shadow-[#FF6900]/25 hover:shadow-xl hover:shadow-[#FF6900]/40 focus:ring-2 focus:ring-[#FF6900] focus:ring-offset-2 focus:ring-offset-[#0A0A0A] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             >
               {isLoading ? 'Connessione...' : 'Connetti Database'}
             </button>
@@ -255,7 +291,7 @@ export default function Setup() {
             <button 
               type="submit"
               disabled={isLoading}
-              className="relative w-full py-3 mt-2 px-6 bg-gradient-to-r from-[#FF6900] to-[#FF4422] text-white font-semibold rounded-xl shadow-lg shadow-[#FF6900]/25 hover:shadow-xl hover:shadow-[#FF6900]/40 focus:ring-2 focus:ring-[#FF6900] focus:ring-offset-2 focus:ring-offset-[#0A0A0A] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              className="relative w-full py-3 mt-2 px-6 bg-linear-to-r from-[#FF6900] to-[#FF4422] text-white font-semibold rounded-xl shadow-lg shadow-[#FF6900]/25 hover:shadow-xl hover:shadow-[#FF6900]/40 focus:ring-2 focus:ring-[#FF6900] focus:ring-offset-2 focus:ring-offset-[#0A0A0A] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             >
               {isLoading ? 'Creazione...' : 'Crea Amministratore'}
             </button>
