@@ -6,22 +6,27 @@ import Layout from './layouts/main'
 import Settings from './pages/settings'
 import Projects from './pages/projects'
 import NotFound from './pages/not-found'
+import Setup from './pages/setup'
+import SetupGuard from './components/SetupGuard'
 
 function App() {
   return (
     <BrowserRouter>
-      <div className="w-screen h-screen overflow-auto relative">
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Overview />} />
-            <Route path='projects' element={<Projects />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="profile" element={<Profile />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </div>
+      <SetupGuard>
+        <div className="w-screen h-screen overflow-auto relative">
+          <Routes>
+            <Route path="/setup" element={<Setup />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Overview />} />
+              <Route path='projects' element={<Projects />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="profile" element={<Profile />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </div>
+      </SetupGuard>
     </BrowserRouter>
   )
 }
