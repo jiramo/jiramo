@@ -6,12 +6,24 @@ import (
 	"net/http"
 )
 
+// AppState is a middleware that enforces application setup flow restrictions.
+// It intercepts incoming HTTP requests and conditionally allows or blocks them
+// depending on whether the database and admin user have been configured.
+//
+// Behavior:
+//   - Always allows access to "/" and "/setup/status".
+//   - If the application state is NoDB, only "/setup/db" is accessible.
+//   - If the application state is NoAdmin, only "/setup/admin" is accessible.
+//   - If the application state is Ready, setup endpoints ("/setup/db",
+//     "/setup/admin") are blocked.
+//
+// For disallowed routes, it responds with HTTP 403 Forbidden and a descriptive
+// error message. Otherwise, the request is passed to the next handler.
 func AppState(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 
-		// Allow access to setup status and static resources
-		if path == "/setup/status" || path == "/" || !isAPIPath(path) {
+		if path == "/setup/status" || path == "/" {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -39,15 +51,4 @@ func AppState(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
-}
-
-func isAPIPath(path string) bool {
-	if len(path) < 5 {
-		return false
-	}
-	return (len(path) >= 5 && path[:5] == "/auth") ||
-		(len(path) >= 6 && path[:6] == "/users") ||
-		(len(path) >= 6 && path[:6] == "/setup") ||
-		(len(path) >= 8 && path[:8] == "/profile") ||
-		(len(path) >= 9 && path[:9] == "/projects")
 }
