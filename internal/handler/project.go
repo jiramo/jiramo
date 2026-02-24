@@ -65,11 +65,6 @@ func (h *ProjectHandler) GetProjects(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ProjectHandler) CreateProject(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	var input ProjectInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -81,20 +76,8 @@ func (h *ProjectHandler) CreateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	customerUUID, err := uuid.Parse(input.CustomerId)
-	if err != nil {
-		http.Error(w, "Invalid CustomerId", http.StatusBadRequest)
-		return
-	}
-
-	var customerExists int64
-	if err := h.DB.Model(&models.User{}).Where("id = ?", customerUUID).Count(&customerExists).Error; err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, "database error")
-		return
-	}
-
-	if customerExists == 0 {
-		utils.WriteError(w, http.StatusNotFound, "customer not found")
+	customerUUID, success := h.validateCustomer(w, input.CustomerId)
+	if !success {
 		return
 	}
 
@@ -112,11 +95,60 @@ func (h *ProjectHandler) CreateProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.DB.Preload("Customer").First(&project, project.ID).Error; err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, "error loading project")
+		utils.WriteError(w, http.StatusInternalServerError, "Error loading project")
 		return
 	}
 
 	utils.WriteJSON(w, http.StatusCreated, project)
+}
+
+func (h *ProjectHandler) EditProject(w http.ResponseWriter, r *http.Request) {
+	var input ProjectInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.Validate.Struct(input); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	customerUUID, success := h.validateCustomer(w, input.CustomerId)
+	if !success {
+		return
+	}
+
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		http.Error(w, "Invalid id", http.StatusBadRequest)
+		return
+	}
+
+	var project models.Project
+	if err := h.DB.First(&project, "id = ?", id).Error; err != nil {
+		utils.WriteError(w, http.StatusNotFound, "Project not found")
+		return
+	}
+
+	if err := h.DB.Model(&models.Project{}).
+		Where("id = ?", id).
+		Updates(models.Project{
+			Title:       input.Title,
+			Description: input.Description,
+			CustomerID:  customerUUID,
+		}).Error; err != nil {
+
+		utils.WriteError(w, http.StatusInternalServerError, "Error during update")
+		return
+	}
+
+	var updated models.Project
+	h.DB.Preload("Customer").First(&updated, "id = ?", id)
+	utils.WriteJSON(w, http.StatusOK, updated)
 }
 
 func (h *ProjectHandler) ProjectStatus(w http.ResponseWriter, r *http.Request) {
@@ -145,4 +177,25 @@ func (h *ProjectHandler) ProjectStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteJSON(w, http.StatusOK, resp)
+}
+
+func (h *ProjectHandler) validateCustomer(w http.ResponseWriter, customerIdStr string) (uuid.UUID, bool) {
+	customerUUID, err := uuid.Parse(customerIdStr)
+	if err != nil {
+		http.Error(w, "Invalid CustomerId", http.StatusBadRequest)
+		return uuid.Nil, false
+	}
+
+	var count int64
+	if err := h.DB.Model(&models.User{}).Where("id = ?", customerUUID).Count(&count).Error; err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, "Database error")
+		return uuid.Nil, false
+	}
+
+	if count == 0 {
+		utils.WriteError(w, http.StatusNotFound, "Customer not found")
+		return uuid.Nil, false
+	}
+
+	return customerUUID, true
 }
