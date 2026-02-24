@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectHandlers *handler.ProjectHandler, webHandler *handler.WebHandler, userHandlers *handler.UserHandler, setupHandler *handler.SetupHandler, profileHandler *handler.ProfileHandler) {
+func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectHandlers *handler.ProjectHandler, webHandler *handler.WebHandler, userHandlers *handler.UserHandler, setupHandler *handler.SetupHandler, profileHandler *handler.ProfileHandler, analyticsHandler *handler.AnalyticsHandler) {
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		utils.WriteJSON(w, http.StatusOK, "Hello from jiramo API")
 	})
@@ -57,6 +57,18 @@ func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectH
 	projectRouter.HandleFunc("", projectHandlers.GetProjects).Methods("GET")
 	projectRouter.HandleFunc("", projectHandlers.CreateProject).Methods("POST")
 	projectRouter.HandleFunc("/{id}/edit", projectHandlers.EditProject).Methods("POST")
+
+	// analytics - public
+	analyticsRouter := router.PathPrefix("/analytics").Subrouter()
+	analyticsRouter.HandleFunc("/track", analyticsHandler.Track).Methods("POST")
+	analyticsRouter.HandleFunc("/event", analyticsHandler.TrackEvent).Methods("POST")
+
+	// analytics - private
+	analyticsPrivateRouter := router.PathPrefix("/projects/{id}/analytics").Subrouter()
+	analyticsPrivateRouter.Use(middleware.Auth)
+	analyticsPrivateRouter.Use(middleware.RequireRole(models.RoleUser, models.RoleAdmin))
+	analyticsPrivateRouter.HandleFunc("", analyticsHandler.GetProjectStats).Methods("GET")
+	analyticsPrivateRouter.HandleFunc("/realtime", analyticsHandler.GetRealtimeStats).Methods("GET")
 
 	// PUBLIC API
 	router.HandleFunc("/projects/{id}/status", projectHandlers.ProjectStatus).Methods("GET")
