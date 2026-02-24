@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import Button from '../lib/components/button';
+import { Settings, Clipboard, Code, CreditCard, Users } from 'lucide-react';
+import NavItem from '../components/NavItem';
 
 export default function DashboardSettings() {
   const [activeTab, setActiveTab] = useState('general');
@@ -30,12 +32,12 @@ export default function DashboardSettings() {
 
         <aside className="w-full lg:w-64 shrink-0">
           <nav className="flex flex-col space-y-1 sticky top-24">
-            <NavItem label="Generale" icon="building" active={activeTab === 'general'} onClick={() => setActiveTab('general')} />
-            <NavItem label="Membri del Team" icon="users" active={activeTab === 'team'} onClick={() => setActiveTab('team')} />
-            <NavItem label="API & Integrazioni" icon="code" active={activeTab === 'api'} onClick={() => setActiveTab('api')} />
-            <NavItem label="Fatturazione" icon="card" active={activeTab === 'billing'} onClick={() => setActiveTab('billing')} />
+            <NavItem label="Generale" Icon={Settings} active={activeTab === 'general'} onClick={() => setActiveTab('general')} />
+            <NavItem label="Membri del Team" Icon={Users} active={activeTab === 'team'} onClick={() => setActiveTab('team')} />
+            <NavItem label="API & Integrazioni" Icon={Code} active={activeTab === 'api'} onClick={() => setActiveTab('api')} />
+            <NavItem label="Fatturazione" Icon={CreditCard} active={activeTab === 'billing'} onClick={() => setActiveTab('billing')} />
             <div className="h-px bg-white/6 my-4 mx-3" />
-            <NavItem label="Audit Logs" icon="clipboard" active={activeTab === 'logs'} onClick={() => setActiveTab('logs')} />
+            <NavItem label="Audit Logs" Icon={Clipboard} active={activeTab === 'logs'} onClick={() => setActiveTab('logs')} />
           </nav>
         </aside>
 
@@ -125,7 +127,7 @@ export default function DashboardSettings() {
               <div className="space-y-6">
                   <div className="flex justify-between items-center">
                       <h3 className="text-lg font-bold text-white">3 Membri Attivi</h3>
-                      <button className="bg-white text-black px-4 py-2 rounded-lg text-sm font-bold hover:bg-[#FF6900] hover:text-white transition-colors">
+                      <button className="text-white/70 bg-white/5 px-4 py-2 rounded-lg text-sm font-bold hover:bg-[#FF6900] hover:text-white transition-colors border border-white/10">
                           Invita Utente
                       </button>
                   </div>
@@ -257,32 +259,3 @@ const TeamRow = ({ name, email, role }: any) => (
         </div>
     </div>
 )
-
-const NavItem = ({ label, icon, active, onClick }: any) => {
-    const icons: any = {
-        building: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4",
-        users: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z",
-        code: "M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4",
-        card: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z",
-        clipboard: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-    };
-
-    return (
-        <button 
-            onClick={onClick}
-            className={`
-                group relative w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300
-                ${active 
-                    ? 'text-white bg-white/5' 
-                    : 'text-white/40 hover:text-white hover:bg-white/2'}
-            `}
-        >
-            {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 bg-[#FF6900] rounded-r-full shadow-[0_0_8px_#FF6900]" />}
-            
-            <svg className={`w-5 h-5 transition-colors ${active ? 'text-[#FF6900]' : 'text-white/40 group-hover:text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d={icons[icon]} />
-            </svg>
-            <span className="truncate">{label}</span>
-        </button>
-    )
-}
