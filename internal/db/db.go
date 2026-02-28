@@ -43,6 +43,9 @@ func Connect(user, host, password, name, port string) (*gorm.DB, error) {
 		&models.User{},
 		&models.Project{},
 		&models.Token{},
+		&models.Session{},
+		&models.PageView{},
+		&models.AnalyticsEvent{},
 	); err != nil {
 		models.AppState = models.NoDB
 		return nil, err
