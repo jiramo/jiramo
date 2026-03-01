@@ -28,6 +28,12 @@ type ProjectInput struct {
 	CustomerId  string `json:"customer_id"`
 }
 
+type UpdateProjectInput struct {
+	Title       *string `json:"title" validate:"omitempty,min=3,max=32"`
+	Description *string `json:"description" validate:"omitempty,min=1.max=64"`
+	CustomerId  *string `json:"customer_id" validate:"omitempty,uuid"`
+}
+
 func (h *ProjectHandler) GetProjects(w http.ResponseWriter, r *http.Request) {
 	pageStr := r.URL.Query().Get("page")
 	limitStr := r.URL.Query().Get("limit")
@@ -103,7 +109,7 @@ func (h *ProjectHandler) CreateProject(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ProjectHandler) EditProject(w http.ResponseWriter, r *http.Request) {
-	var input ProjectInput
+	var input UpdateProjectInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
@@ -111,11 +117,6 @@ func (h *ProjectHandler) EditProject(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.Validate.Struct(input); err != nil {
 		utils.WriteError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	customerUUID, success := h.validateCustomer(w, input.CustomerId)
-	if !success {
 		return
 	}
 
@@ -134,14 +135,28 @@ func (h *ProjectHandler) EditProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.DB.Model(&models.Project{}).
-		Where("id = ?", id).
-		Updates(models.Project{
-			Title:       input.Title,
-			Description: input.Description,
-			CustomerID:  customerUUID,
-		}).Error; err != nil {
+	updates := map[string]interface{}{}
 
+	if input.Title != nil {
+		updates["title"] = *input.Title
+	}
+	if input.Description != nil {
+		updates["description"] = *input.Description
+	}
+	if input.CustomerId != nil {
+		customerUUID, success := h.validateCustomer(w, *input.CustomerId)
+		if !success {
+			return
+		}
+		updates["customer_id"] = customerUUID
+	}
+
+	if len(updates) == 0 {
+		utils.WriteError(w, http.StatusBadRequest, "No fields to update")
+		return
+	}
+
+	if err := h.DB.Model(&project).Updates(updates).Error; err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, "Error during update")
 		return
 	}
