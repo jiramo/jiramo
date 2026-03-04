@@ -56,7 +56,9 @@ func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectH
 	projectRouter.Use(middleware.RequireRole(models.RoleUser, models.RoleAdmin))
 	projectRouter.HandleFunc("", projectHandlers.GetProjects).Methods("GET")
 	projectRouter.HandleFunc("", projectHandlers.CreateProject).Methods("POST")
-	projectRouter.HandleFunc("/{id}/edit", projectHandlers.EditProject).Methods("POST")
+	projectRouter.HandleFunc("/{id}", projectHandlers.EditProject).Methods("PUT", "PATCH")
+	projectRouter.HandleFunc("/{id}", projectHandlers.DeleteProject).Methods("DELETE")
+	projectRouter.HandleFunc("/{id}/status", projectHandlers.ToggleProjectStatus).Methods("PATCH")
 
 	// analytics - public
 	analyticsRouter := router.PathPrefix("/analytics").Subrouter()

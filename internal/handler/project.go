@@ -194,6 +194,57 @@ func (h *ProjectHandler) ProjectStatus(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJSON(w, http.StatusOK, resp)
 }
 
+func (h *ProjectHandler) ToggleProjectStatus(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		utils.WriteError(w, http.StatusBadRequest, "Invalid id")
+		return
+	}
+
+	var project models.Project
+	if err := h.DB.First(&project, "id = ?", id).Error; err != nil {
+		utils.WriteError(w, http.StatusNotFound, "Project not found")
+		return
+	}
+
+	newStatus := !project.Status
+	if err := h.DB.Model(&project).Update("status", newStatus).Error; err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, "Error updating status")
+		return
+	}
+
+	var updated models.Project
+	h.DB.Preload("Customer").First(&updated, "id = ?", id)
+	utils.WriteJSON(w, http.StatusOK, updated)
+}
+
+func (h *ProjectHandler) DeleteProject(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		utils.WriteError(w, http.StatusBadRequest, "Invalid id")
+		return
+	}
+
+	var project models.Project
+	if err := h.DB.First(&project, "id = ?", id).Error; err != nil {
+		utils.WriteError(w, http.StatusNotFound, "Project not found")
+		return
+	}
+
+	if err := h.DB.Delete(&project).Error; err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, "Error during deletion")
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, map[string]string{"message": "Project deleted successfully"})
+}
+
 func (h *ProjectHandler) validateCustomer(w http.ResponseWriter, customerIdStr string) (uuid.UUID, bool) {
 	customerUUID, err := uuid.Parse(customerIdStr)
 	if err != nil {
