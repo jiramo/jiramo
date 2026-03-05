@@ -143,43 +143,88 @@ export default function ProjectsPage() {
   );
 }
 
-const MasterpieceCard = ({ data, onEdit, onDelete, onToggleConfirm, onCopyToken }: { data: Project; onEdit: () => void; onDelete: () => void; onToggleConfirm: () => void; onCopyToken: () => void }) => (
-  <div className="flex flex-col justify-between rounded-xl overflow-visible bg-[#09090B] border border-white/8 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] min-h-60 relative">
-    <div className="p-7">
-      <div className="flex justify-between items-start mb-6">
-        <span className="inline-block px-2 py-1 rounded-sm bg-[#151515] border border-white/5 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
-          {customerLabel(data)}
-        </span>
-        <StatusBadge status={data.status} />
-      </div>
-      <h3 className="text-2xl font-bold text-white tracking-tight leading-snug">{data.title}</h3>
-      {data.description && <p className="mt-2 text-sm text-neutral-500 line-clamp-2">{data.description}</p>}
-    </div>
-    <div className="flex items-center justify-between px-5 py-4 bg-[#0E0E10] border-t border-white/6 rounded-b-xl">
-      <div className="flex items-center gap-2 text-[11px] font-mono">
-        <div className={data.status ? 'w-1.5 h-1.5 rounded-full bg-emerald-500/60' : 'w-1.5 h-1.5 rounded-full bg-neutral-700'} />
-        <span className={data.status ? 'text-neutral-400' : 'text-neutral-600'}>{data.status ? 'Attivo' : 'Inattivo'}</span>
-      </div>
-      <DropdownMenu status={data.status} onEdit={onEdit} onDelete={onDelete} onToggleConfirm={onToggleConfirm} onCopyToken={onCopyToken} />
-    </div>
-  </div>
-);
+const MasterpieceCard = ({ data, onEdit, onDelete, onToggleConfirm, onCopyToken }: { data: Project; onEdit: () => void; onDelete: () => void; onToggleConfirm: () => void; onCopyToken: () => void }) => {
+  const [copied, setCopied] = useState(false);
+  
+  const handleCopyApiKey = () => {
+    onCopyToken();
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
-const MasterpieceRow = ({ data, onEdit, onDelete, onToggleConfirm, onCopyToken }: { data: Project; onEdit: () => void; onDelete: () => void; onToggleConfirm: () => void; onCopyToken: () => void }) => (
-  <div className="grid grid-cols-12 items-center px-6 py-4 border-b border-white/4 last:border-0 hover:bg-white/2 transition-colors group">
-    <div className="col-span-4 pr-4">
-      <h4 className="text-sm font-bold text-white tracking-tight truncate">{data.title}</h4>
-      {data.description && <p className="text-[10px] text-neutral-600 mt-0.5 truncate">{data.description}</p>}
+  return (
+    <div className="flex flex-col justify-between rounded-xl overflow-visible bg-[#09090B] border border-white/8 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] min-h-60 relative">
+      <div className="p-7">
+        <div className="flex justify-between items-start mb-6">
+          <span className="inline-block px-2 py-1 rounded-sm bg-[#151515] border border-white/5 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
+            {customerLabel(data)}
+          </span>
+          <StatusBadge status={data.status} />
+        </div>
+        <h3 className="text-2xl font-bold text-white tracking-tight leading-snug">{data.title}</h3>
+        {data.description && <p className="mt-2 text-sm text-neutral-500 line-clamp-2">{data.description}</p>}
+        <div className="mt-4 pt-4 border-t border-white/6">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-1.5">API Key</p>
+              <p className="text-[11px] font-mono text-neutral-400 truncate">{data.ID}</p>
+            </div>
+            <button
+              onClick={handleCopyApiKey}
+              className="shrink-0 p-2 rounded-md text-neutral-400 hover:text-white hover:bg-white/8 transition-colors"
+              title="Copia API Key"
+            >
+              {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center justify-between px-5 py-4 bg-[#0E0E10] border-t border-white/6 rounded-b-xl">
+        <div className="flex items-center gap-2 text-[11px] font-mono">
+          <div className={data.status ? 'w-1.5 h-1.5 rounded-full bg-emerald-500/60' : 'w-1.5 h-1.5 rounded-full bg-neutral-700'} />
+          <span className={data.status ? 'text-neutral-400' : 'text-neutral-600'}>{data.status ? 'Attivo' : 'Inattivo'}</span>
+        </div>
+        <DropdownMenu status={data.status} onEdit={onEdit} onDelete={onDelete} onToggleConfirm={onToggleConfirm} onCopyToken={onCopyToken} />
+      </div>
     </div>
-    <div className="col-span-3">
-      <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">{customerLabel(data)}</span>
+  );
+};
+
+const MasterpieceRow = ({ data, onEdit, onDelete, onToggleConfirm, onCopyToken }: { data: Project; onEdit: () => void; onDelete: () => void; onToggleConfirm: () => void; onCopyToken: () => void }) => {
+  const [copied, setCopied] = useState(false);
+  
+  const handleCopyApiKey = () => {
+    onCopyToken();
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="grid grid-cols-12 items-center px-6 py-4 border-b border-white/4 last:border-0 hover:bg-white/2 transition-colors group">
+      <div className="col-span-4 pr-4">
+        <h4 className="text-sm font-bold text-white tracking-tight truncate">{data.title}</h4>
+        {data.description && <p className="text-[10px] text-neutral-600 mt-0.5 truncate">{data.description}</p>}
+        <div className="flex items-center gap-2 mt-1.5">
+          <span className="text-[9px] font-mono text-neutral-600 truncate max-w-50">{data.ID}</span>
+          <button
+            onClick={handleCopyApiKey}
+            className="shrink-0 p-0.5 rounded text-neutral-500 hover:text-white hover:bg-white/8 transition-colors opacity-0 group-hover:opacity-100"
+            title="Copia API Key"
+          >
+            {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+          </button>
+        </div>
+      </div>
+      <div className="col-span-3">
+        <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">{customerLabel(data)}</span>
+      </div>
+      <div className="col-span-3"><StatusBadge status={data.status} minimal /></div>
+      <div className="col-span-2 flex justify-end items-center gap-2">
+        <DropdownMenu status={data.status} onEdit={onEdit} onDelete={onDelete} onToggleConfirm={onToggleConfirm} onCopyToken={onCopyToken} />
+      </div>
     </div>
-    <div className="col-span-3"><StatusBadge status={data.status} minimal /></div>
-    <div className="col-span-2 flex justify-end items-center gap-2">
-      <DropdownMenu status={data.status} onEdit={onEdit} onDelete={onDelete} onToggleConfirm={onToggleConfirm} onCopyToken={onCopyToken} />
-    </div>
-  </div>
-);
+  );
+};
 
 const DropdownMenu = ({ status, onEdit, onDelete, onToggleConfirm, onCopyToken }: { status: boolean; onEdit: () => void; onDelete: () => void; onToggleConfirm: () => void; onCopyToken: () => void }) => {
   const [copied, setCopied] = useState(false);
