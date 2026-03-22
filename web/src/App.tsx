@@ -5,6 +5,7 @@ import Profile from './pages/profile'
 import Layout from './layouts/main'
 import Settings from './pages/settings'
 import Projects from './pages/projects'
+import Clients from './pages/clients'
 import NotFound from './pages/not-found'
 import Setup from './pages/setup'
 import SetupGuard from './components/SetupGuard'
@@ -20,6 +21,7 @@ function App() {
             <Route path="/" element={<Layout />}>
               <Route index element={<Overview />} />
               <Route path='projects' element={<Projects />} />
+              <Route path='clients' element={<Clients />} />
               <Route path="settings" element={<Settings />} />
               <Route path="profile" element={<Profile />} />
             </Route>
