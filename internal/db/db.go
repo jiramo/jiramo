@@ -46,6 +46,7 @@ func Connect(user, host, password, name, port string) (*gorm.DB, error) {
 		&models.Session{},
 		&models.PageView{},
 		&models.AnalyticsEvent{},
+		&models.APIKey{},
 	); err != nil {
 		models.AppState = models.NoDB
 		return nil, err

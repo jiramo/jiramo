@@ -8,9 +8,10 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 )
 
-func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectHandlers *handler.ProjectHandler, webHandler *handler.WebHandler, userHandlers *handler.UserHandler, setupHandler *handler.SetupHandler, profileHandler *handler.ProfileHandler, analyticsHandler *handler.AnalyticsHandler) {
+func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectHandlers *handler.ProjectHandler, webHandler *handler.WebHandler, userHandlers *handler.UserHandler, setupHandler *handler.SetupHandler, profileHandler *handler.ProfileHandler, analyticsHandler *handler.AnalyticsHandler, apiKeyHandler *handler.APIKeyHandler, db *gorm.DB) {
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		utils.WriteJSON(w, http.StatusOK, "Hello from jiramo API")
 	})
@@ -58,7 +59,21 @@ func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectH
 	projectRouter.HandleFunc("", projectHandlers.CreateProject).Methods("POST")
 	projectRouter.HandleFunc("/{id}", projectHandlers.EditProject).Methods("PUT", "PATCH")
 	projectRouter.HandleFunc("/{id}", projectHandlers.DeleteProject).Methods("DELETE")
-	projectRouter.HandleFunc("/{id}/status", projectHandlers.ToggleProjectStatus).Methods("PATCH")
+
+	// projects - private
+	statusRouter := router.PathPrefix("/projects/{id}").Subrouter()
+	statusRouter.Use(middleware.AuthOrAPIKey(db))
+	statusRouter.HandleFunc("/status", projectHandlers.GetProjectStatus).Methods("GET")
+	statusRouter.HandleFunc("/status/set", projectHandlers.SetProjectStatus).Methods("POST")
+	statusRouter.HandleFunc("/status/toggle", projectHandlers.ToggleProjectStatus).Methods("PATCH")
+
+	// api keys - private
+	apiKeyRouter := router.PathPrefix("/projects/{id}/apikeys").Subrouter()
+	apiKeyRouter.Use(middleware.Auth)
+	apiKeyRouter.Use(middleware.RequireRole(models.RoleAdmin))
+	apiKeyRouter.HandleFunc("", apiKeyHandler.Create).Methods("POST")
+	apiKeyRouter.HandleFunc("", apiKeyHandler.List).Methods("GET")
+	apiKeyRouter.HandleFunc("/{keyId}", apiKeyHandler.Delete).Methods("DELETE")
 
 	// analytics - public
 	analyticsRouter := router.PathPrefix("/analytics").Subrouter()
@@ -72,9 +87,6 @@ func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectH
 	analyticsPrivateRouter.HandleFunc("", analyticsHandler.GetProjectStats).Methods("GET")
 	analyticsPrivateRouter.HandleFunc("/realtime", analyticsHandler.GetRealtimeStats).Methods("GET")
 
-	// PUBLIC API
-	router.HandleFunc("/projects/{id}/status", projectHandlers.ProjectStatus).Methods("GET")
-
 	// ERRORS
 	// 404
 	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -85,5 +97,4 @@ func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectH
 	router.MethodNotAllowedHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		utils.WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
 	})
-
 }

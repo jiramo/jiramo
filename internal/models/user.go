@@ -14,8 +14,9 @@ const (
 )
 
 const (
-	UserIDKey   contextKey = "user_id"
-	UserRoleKey contextKey = "user_role"
+	UserIDKey       contextKey = "user_id"
+	UserRoleKey     contextKey = "user_role"
+	APIKeyProjectID contextKey = "apikey_project_id"
 )
 
 type User struct {

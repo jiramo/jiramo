@@ -30,7 +30,7 @@ type ProjectInput struct {
 
 type UpdateProjectInput struct {
 	Title       *string `json:"title" validate:"omitempty,min=3,max=32"`
-	Description *string `json:"description" validate:"omitempty,min=1.max=64"`
+	Description *string `json:"description" validate:"omitempty,min=1,max=64"`
 	CustomerId  *string `json:"customer_id" validate:"omitempty,uuid"`
 }
 
@@ -38,47 +38,32 @@ func (h *ProjectHandler) GetProjects(w http.ResponseWriter, r *http.Request) {
 	pageStr := r.URL.Query().Get("page")
 	limitStr := r.URL.Query().Get("limit")
 
-	page := 1
-	limit := 10
+	page, limit := 1, 10
 
 	if pageStr != "" {
-		p, err := strconv.Atoi(pageStr)
-		if err != nil || p <= 0 {
-			utils.WriteError(w, http.StatusBadRequest, "Invalid 'page' parameter")
-			return
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+			page = p
 		}
-		page = p
 	}
-
 	if limitStr != "" {
-		l, err := strconv.Atoi(limitStr)
-		if err != nil || l <= 0 {
-			utils.WriteError(w, http.StatusBadRequest, "Invalid 'limit' parameter")
-			return
+		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+			limit = l
 		}
-		limit = l
 	}
 
 	offset := (page - 1) * limit
-
 	var projects []models.Project
 	if err := h.DB.Limit(limit).Offset(offset).Find(&projects).Error; err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, "Failed to retrieve projects")
 		return
 	}
-
 	utils.WriteJSON(w, http.StatusOK, projects)
 }
 
 func (h *ProjectHandler) CreateProject(w http.ResponseWriter, r *http.Request) {
 	var input ProjectInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
-		return
-	}
-
-	if err := h.Validate.Struct(input); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err.Error())
+		utils.WriteError(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
@@ -100,43 +85,24 @@ func (h *ProjectHandler) CreateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.DB.Preload("Customer").First(&project, project.ID).Error; err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, "Error loading project")
-		return
-	}
-
+	h.DB.Preload("Customer").First(&project, project.ID)
 	utils.WriteJSON(w, http.StatusCreated, project)
 }
 
 func (h *ProjectHandler) EditProject(w http.ResponseWriter, r *http.Request) {
 	var input UpdateProjectInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		utils.WriteError(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
-	if err := h.Validate.Struct(input); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	vars := mux.Vars(r)
-	idStr := vars["id"]
-
-	id, err := uuid.Parse(idStr)
+	id, err := uuid.Parse(mux.Vars(r)["id"])
 	if err != nil {
-		http.Error(w, "Invalid id", http.StatusBadRequest)
-		return
-	}
-
-	var project models.Project
-	if err := h.DB.First(&project, "id = ?", id).Error; err != nil {
-		utils.WriteError(w, http.StatusNotFound, "Project not found")
+		utils.WriteError(w, http.StatusBadRequest, "Invalid id")
 		return
 	}
 
 	updates := map[string]interface{}{}
-
 	if input.Title != nil {
 		updates["title"] = *input.Title
 	}
@@ -151,12 +117,7 @@ func (h *ProjectHandler) EditProject(w http.ResponseWriter, r *http.Request) {
 		updates["customer_id"] = customerUUID
 	}
 
-	if len(updates) == 0 {
-		utils.WriteError(w, http.StatusBadRequest, "No fields to update")
-		return
-	}
-
-	if err := h.DB.Model(&project).Updates(updates).Error; err != nil {
+	if err := h.DB.Model(&models.Project{}).Where("id = ?", id).Updates(updates).Error; err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, "Error during update")
 		return
 	}
@@ -166,32 +127,27 @@ func (h *ProjectHandler) EditProject(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJSON(w, http.StatusOK, updated)
 }
 
-func (h *ProjectHandler) ProjectStatus(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	idStr := vars["id"]
-
-	id, err := uuid.Parse(idStr)
+func (h *ProjectHandler) GetProjectStatus(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(mux.Vars(r)["id"])
 	if err != nil {
-		http.Error(w, "Invalid id", http.StatusBadRequest)
+		utils.WriteError(w, http.StatusBadRequest, "Invalid id")
 		return
 	}
 
 	var project models.Project
-	if err := h.DB.Preload("Customer").First(&project, id).Error; err != nil {
-		http.Error(w, "Project not found", http.StatusNotFound)
+	if err := h.DB.Preload("Customer").First(&project, "id = ?", id).Error; err != nil {
+		utils.WriteError(w, http.StatusNotFound, "Project not found")
 		return
 	}
 
-	resp := map[string]any{
+	utils.WriteJSON(w, http.StatusOK, map[string]any{
 		"status": project.Status,
 		"customer": map[string]string{
 			"name":    project.Customer.Name,
 			"surname": project.Customer.Surname,
 			"email":   project.Customer.Email,
 		},
-	}
-
-	utils.WriteJSON(w, http.StatusOK, resp)
+	})
 }
 
 func (h *ProjectHandler) ToggleProjectStatus(w http.ResponseWriter, r *http.Request) {
@@ -221,47 +177,41 @@ func (h *ProjectHandler) ToggleProjectStatus(w http.ResponseWriter, r *http.Requ
 	utils.WriteJSON(w, http.StatusOK, updated)
 }
 
-func (h *ProjectHandler) DeleteProject(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	idStr := vars["id"]
-
-	id, err := uuid.Parse(idStr)
+func (h *ProjectHandler) SetProjectStatus(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(mux.Vars(r)["id"])
 	if err != nil {
 		utils.WriteError(w, http.StatusBadRequest, "Invalid id")
 		return
 	}
 
-	var project models.Project
-	if err := h.DB.First(&project, "id = ?", id).Error; err != nil {
-		utils.WriteError(w, http.StatusNotFound, "Project not found")
+	if err := h.DB.Model(&models.Project{}).Where("id = ?", id).Update("status", true).Error; err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, "Error updating status")
 		return
 	}
 
-	if err := h.DB.Delete(&project).Error; err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, "Error during deletion")
+	h.GetProjectStatus(w, r)
+}
+
+func (h *ProjectHandler) DeleteProject(w http.ResponseWriter, r *http.Request) {
+	id, _ := uuid.Parse(mux.Vars(r)["id"])
+	if err := h.DB.Delete(&models.Project{}, "id = ?", id).Error; err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, "Deletion failed")
 		return
 	}
-
-	utils.WriteJSON(w, http.StatusOK, map[string]string{"message": "Project deleted successfully"})
+	utils.WriteJSON(w, http.StatusOK, map[string]string{"message": "Deleted"})
 }
 
 func (h *ProjectHandler) validateCustomer(w http.ResponseWriter, customerIdStr string) (uuid.UUID, bool) {
 	customerUUID, err := uuid.Parse(customerIdStr)
 	if err != nil {
-		http.Error(w, "Invalid CustomerId", http.StatusBadRequest)
+		utils.WriteError(w, http.StatusBadRequest, "Invalid CustomerId")
 		return uuid.Nil, false
 	}
-
 	var count int64
-	if err := h.DB.Model(&models.User{}).Where("id = ?", customerUUID).Count(&count).Error; err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, "Database error")
-		return uuid.Nil, false
-	}
-
+	h.DB.Model(&models.User{}).Where("id = ?", customerUUID).Count(&count)
 	if count == 0 {
 		utils.WriteError(w, http.StatusNotFound, "Customer not found")
 		return uuid.Nil, false
 	}
-
 	return customerUUID, true
 }
