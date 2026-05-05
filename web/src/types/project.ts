@@ -1,5 +1,5 @@
 export interface Customer {
-  id: string;
+  ID: string;
   name: string;
   surname: string;
   email: string;
@@ -11,7 +11,7 @@ export interface Project {
   title: string;
   description: string;
   customer_id: string;
-  Customer: Customer;
+  Customer?: Customer;
   status: boolean;
 }
 

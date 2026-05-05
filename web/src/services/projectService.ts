@@ -1,67 +1,32 @@
+import { api } from '../lib/api';
 import type { Project, CreateProjectInput, UpdateProjectInput } from '../types/project';
 
-function authHeaders(): HeadersInit {
-  const token = localStorage.getItem('access_token');
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
-
-async function handleResponse<T>(res: Response): Promise<T> {
-  if (!res.ok) {
-    const text = await res.text();
-    let message = `HTTP ${res.status}`;
-    try {
-      const json = JSON.parse(text);
-      message = json.error || json.message || message;
-    } catch {
-      message = text || message;
-    }
-    throw new Error(message);
-  }
-  return res.json() as Promise<T>;
-}
-
 export const projectService = {
-  async getProjects(page = 1, limit = 50): Promise<Project[]> {
-    const res = await fetch(`/projects?page=${page}&limit=${limit}`, {
-      headers: authHeaders(),
-    });
-    return handleResponse<Project[]>(res);
+  getProjects(page = 1, limit = 50) {
+    return api.get<Project[]>(`/api/projects?page=${page}&limit=${limit}`);
   },
 
-  async createProject(input: CreateProjectInput): Promise<Project> {
-    const res = await fetch('/projects', {
-      method: 'POST',
-      headers: authHeaders(),
-      body: JSON.stringify(input),
-    });
-    return handleResponse<Project>(res);
+  createProject(input: CreateProjectInput) {
+    return api.post<Project>('/api/projects', input);
   },
 
-  async updateProject(id: string, input: UpdateProjectInput): Promise<Project> {
-    const res = await fetch(`/projects/${id}`, {
-      method: 'PATCH',
-      headers: authHeaders(),
-      body: JSON.stringify(input),
-    });
-    return handleResponse<Project>(res);
+  updateProject(id: string, input: UpdateProjectInput) {
+    return api.patch<Project>(`/api/projects/${id}`, input);
   },
 
-  async deleteProject(id: string): Promise<void> {
-    const res = await fetch(`/projects/${id}`, {
-      method: 'DELETE',
-      headers: authHeaders(),
-    });
-    await handleResponse<unknown>(res);
+  deleteProject(id: string) {
+    return api.delete<void>(`/api/projects/${id}`);
   },
 
-  async toggleStatus(id: string): Promise<Project> {
-    const res = await fetch(`/projects/${id}/status`, {
-      method: 'PATCH',
-      headers: authHeaders(),
-    });
-    return handleResponse<Project>(res);
+  toggleStatus(id: string) {
+    return api.patch<Project>(`/api/projects/${id}/status/toggle`);
+  },
+
+  activateStatus(id: string) {
+    return api.post<{ status: boolean; customer: { name: string; surname: string; email: string } }>(`/api/projects/${id}/status/set`, {});
+  },
+
+  getStatus(id: string) {
+    return api.get<{ status: boolean; customer: { name: string; surname: string; email: string } }>(`/api/projects/${id}/status`);
   },
 };
