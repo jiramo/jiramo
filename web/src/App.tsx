@@ -9,26 +9,31 @@ import Clients from './pages/clients'
 import NotFound from './pages/not-found'
 import Setup from './pages/setup'
 import SetupGuard from './components/SetupGuard'
+import { AuthProvider, RequireAuth, RequireGuest } from './lib/auth'
+import Analytics from './pages/analytics'
 
 function App() {
   return (
     <BrowserRouter>
-      <SetupGuard>
-        <div className="w-screen h-screen overflow-auto relative">
-          <Routes>
-            <Route path="/setup" element={<Setup />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/" element={<Layout />}>
-              <Route index element={<Overview />} />
-              <Route path='projects' element={<Projects />} />
-              <Route path='clients' element={<Clients />} />
-              <Route path="settings" element={<Settings />} />
-              <Route path="profile" element={<Profile />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </div>
-      </SetupGuard>
+      <AuthProvider>
+        <SetupGuard>
+          <div className="w-screen h-screen overflow-auto relative">
+            <Routes>
+              <Route path="/setup" element={<Setup />} />
+              <Route path="/login" element={<RequireGuest><Login /></RequireGuest>} />
+              <Route path="/" element={<RequireAuth><Layout /></RequireAuth>}>
+                <Route index element={<Overview />} />
+                <Route path='projects' element={<Projects />} />
+                <Route path='clients' element={<Clients />} />
+                <Route path='analytics' element={<Analytics />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="profile" element={<Profile />} />
+              </Route>
+              <Route path="*" element={<RequireAuth><NotFound /></RequireAuth>} />
+            </Routes>
+          </div>
+        </SetupGuard>
+      </AuthProvider>
     </BrowserRouter>
   )
 }

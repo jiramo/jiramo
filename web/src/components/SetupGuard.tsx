@@ -1,53 +1,50 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
+import { api } from '../lib/api';
+import { useAuth } from '../lib/auth';
+import { LoadingScreen } from '../lib/components/ui';
+
+interface SetupStatusResponse {
+  state: 'no_db' | 'no_admin' | 'ready';
+}
 
 interface SetupGuardProps {
   children: ReactNode;
 }
 
 export default function SetupGuard({ children }: SetupGuardProps) {
-  const [isChecking, setIsChecking] = useState(true);
-  const navigate = useNavigate();
+  const [checking, setChecking] = useState(true);
+  const [setupState, setSetupState] = useState<SetupStatusResponse['state'] | null>(null);
   const location = useLocation();
+  const { status: authStatus } = useAuth();
 
   useEffect(() => {
-    const checkSetupStatus = async () => {
-      try {
-        const response = await fetch('/setup/status');
-        if (response.ok) {
-          const data = await response.json();
-          const ready = data.state === 'ready';
-
-          console.log('Setup status:', data.state);
-
-          if (!ready && location.pathname !== '/setup') {
-            navigate('/setup', { replace: true });
-          }
-          else if (ready && location.pathname === '/setup') {
-            console.log('Redirecting to /login');
-            navigate('/login', { replace: true });
-          }
-        } else {
-          console.error('Setup status check failed:', response.status);
-        }
-      } catch (error) {
-        console.error('Errore nel controllo dello stato di setup:', error);
-      } finally {
-        setIsChecking(false);
-      }
+    let active = true;
+    api.get<SetupStatusResponse>('/api/setup/status')
+      .then((data) => {
+        if (!active) return;
+        setSetupState(data.state);
+        setChecking(false);
+      })
+      .catch(() => {
+        console.error('Setup status check failed');
+        if (!active) return;
+        setChecking(false);
+      });
+    return () => {
+      active = false;
     };
+  }, []);
 
-    checkSetupStatus();
-  }, [navigate, location.pathname]);
-
-  if (isChecking) {
-    return (
-      <div className="min-h-screen w-full bg-[#050505] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[#FF6900] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+  if (checking) return <LoadingScreen />;
+  if (setupState && setupState !== 'ready' && location.pathname !== '/setup') {
+    return <Navigate to="/setup" replace />;
   }
-
+  if (setupState === 'ready' && location.pathname === '/setup') {
+    if (authStatus === 'checking') return <LoadingScreen />;
+    const target = authStatus === 'authenticated' ? '/' : '/login';
+    return <Navigate to={target} replace />;
+  }
   return <>{children}</>;
 }
