@@ -17,20 +17,23 @@ func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectH
 	})
 	router.Handle("/", webHandler.UIHandler())
 
-	// /setup
-	setupRouter := router.PathPrefix("/setup").Subrouter()
+	// /api subrouter
+	apiRouter := router.PathPrefix("/api").Subrouter()
+
+	// /api/setup
+	setupRouter := apiRouter.PathPrefix("/setup").Subrouter()
 	setupRouter.HandleFunc("/status", setupHandler.Status).Methods("GET")
 	setupRouter.HandleFunc("/db", setupHandler.DBSetup).Methods("POST")
 	setupRouter.HandleFunc("/admin", setupHandler.AdminSetup).Methods("POST")
 
-	// /auth
-	authRouter := router.PathPrefix("/auth").Subrouter()
+	// /api/auth
+	authRouter := apiRouter.PathPrefix("/auth").Subrouter()
 	authRouter.HandleFunc("/refresh", authHandlers.Refresh).Methods("POST")
 	authRouter.HandleFunc("/register", authHandlers.Register).Methods("POST")
 	authRouter.HandleFunc("/login", authHandlers.Login).Methods("POST")
 
-	// /users - user management
-	userRouter := router.PathPrefix("/users").Subrouter()
+	// /api/users - user management
+	userRouter := apiRouter.PathPrefix("/users").Subrouter()
 	userRouter.Use(middleware.Auth)
 
 	// user endpoint - accessible by every authenticated user
@@ -43,16 +46,16 @@ func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectH
 	userRouter.Handle("/{id}", middleware.RequireRole(models.RoleAdmin)(http.HandlerFunc(userHandlers.UpdateUserByID))).Methods("PUT", "PATCH")
 	userRouter.Handle("/{id}", middleware.RequireRole(models.RoleAdmin)(http.HandlerFunc(userHandlers.DeleteUserByID))).Methods("DELETE")
 
-	// /profile - auth protected profile management
-	profileRouter := router.PathPrefix("/profile").Subrouter()
+	// /api/profile - auth protected profile management
+	profileRouter := apiRouter.PathPrefix("/profile").Subrouter()
 	profileRouter.Use(middleware.Auth)
 	profileRouter.HandleFunc("", profileHandler.GetProfile).Methods("GET")
 	profileRouter.HandleFunc("", profileHandler.UpdateProfile).Methods("PUT", "PATCH")
 	profileRouter.HandleFunc("", profileHandler.DeleteProfile).Methods("DELETE")
 	profileRouter.HandleFunc("/password", profileHandler.ChangePassword).Methods("POST")
 
-	// /projects - auth protected
-	projectRouter := router.PathPrefix("/projects").Subrouter()
+	// /api/projects - auth protected
+	projectRouter := apiRouter.PathPrefix("/projects").Subrouter()
 	projectRouter.Use(middleware.Auth)
 	projectRouter.Use(middleware.RequireRole(models.RoleUser, models.RoleAdmin))
 	projectRouter.HandleFunc("", projectHandlers.GetProjects).Methods("GET")
@@ -61,14 +64,14 @@ func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectH
 	projectRouter.HandleFunc("/{id}", projectHandlers.DeleteProject).Methods("DELETE")
 
 	// projects - private
-	statusRouter := router.PathPrefix("/projects/{id}").Subrouter()
+	statusRouter := apiRouter.PathPrefix("/projects/{id}").Subrouter()
 	statusRouter.Use(middleware.AuthOrAPIKey(db))
 	statusRouter.HandleFunc("/status", projectHandlers.GetProjectStatus).Methods("GET")
 	statusRouter.HandleFunc("/status/set", projectHandlers.SetProjectStatus).Methods("POST")
 	statusRouter.HandleFunc("/status/toggle", projectHandlers.ToggleProjectStatus).Methods("PATCH")
 
 	// api keys - private
-	apiKeyRouter := router.PathPrefix("/projects/{id}/apikeys").Subrouter()
+	apiKeyRouter := apiRouter.PathPrefix("/projects/{id}/apikeys").Subrouter()
 	apiKeyRouter.Use(middleware.Auth)
 	apiKeyRouter.Use(middleware.RequireRole(models.RoleAdmin))
 	apiKeyRouter.HandleFunc("", apiKeyHandler.Create).Methods("POST")
@@ -76,12 +79,12 @@ func SetupRoutes(router *mux.Router, authHandlers *handler.AuthHandler, projectH
 	apiKeyRouter.HandleFunc("/{keyId}", apiKeyHandler.Delete).Methods("DELETE")
 
 	// analytics - public
-	analyticsRouter := router.PathPrefix("/analytics").Subrouter()
+	analyticsRouter := apiRouter.PathPrefix("/analytics").Subrouter()
 	analyticsRouter.HandleFunc("/track", analyticsHandler.Track).Methods("POST")
 	analyticsRouter.HandleFunc("/event", analyticsHandler.TrackEvent).Methods("POST")
 
 	// analytics - private
-	analyticsPrivateRouter := router.PathPrefix("/projects/{id}/analytics").Subrouter()
+	analyticsPrivateRouter := apiRouter.PathPrefix("/projects/{id}/analytics").Subrouter()
 	analyticsPrivateRouter.Use(middleware.Auth)
 	analyticsPrivateRouter.Use(middleware.RequireRole(models.RoleUser, models.RoleAdmin))
 	analyticsPrivateRouter.HandleFunc("", analyticsHandler.GetProjectStats).Methods("GET")

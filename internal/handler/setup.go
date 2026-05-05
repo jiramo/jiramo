@@ -88,18 +88,18 @@ type AdminSetupRequest struct {
 
 func (h *SetupHandler) DBSetup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		utils.WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 
 	var req DBSetupRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid json body", http.StatusBadRequest)
+		utils.WriteError(w, http.StatusBadRequest, "invalid json body")
 		return
 	}
 
 	if err := h.Validate.Struct(req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		utils.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -112,7 +112,7 @@ func (h *SetupHandler) DBSetup(w http.ResponseWriter, r *http.Request) {
 	)
 
 	if dbConn == nil {
-		http.Error(w, "database connection failed", http.StatusInternalServerError)
+		utils.WriteError(w, http.StatusInternalServerError, "database connection failed")
 		return
 	}
 
@@ -150,8 +150,9 @@ func (h *SetupHandler) DBSetup(w http.ResponseWriter, r *http.Request) {
 		models.AppState = models.NoAdmin
 	}
 
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("database connected successfully"))
+	utils.WriteJSON(w, http.StatusOK, map[string]string{
+		"message": "database connected successfully",
+	})
 }
 
 func (h *SetupHandler) AdminSetup(w http.ResponseWriter, r *http.Request) {
@@ -211,6 +212,7 @@ func (h *SetupHandler) AdminSetup(w http.ResponseWriter, r *http.Request) {
 
 	models.AppState = models.Ready
 
-	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte("{\"message\":\"admin created successfully\"}"))
+	utils.WriteJSON(w, http.StatusCreated, map[string]string{
+		"message": "admin created successfully",
+	})
 }
