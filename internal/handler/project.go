@@ -53,7 +53,7 @@ func (h *ProjectHandler) GetProjects(w http.ResponseWriter, r *http.Request) {
 
 	offset := (page - 1) * limit
 	var projects []models.Project
-	if err := h.DB.Limit(limit).Offset(offset).Find(&projects).Error; err != nil {
+	if err := h.DB.Preload("Customer").Limit(limit).Offset(offset).Find(&projects).Error; err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, "Failed to retrieve projects")
 		return
 	}
