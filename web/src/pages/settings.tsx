@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type InputHTMLAttributes, type ReactNode } from 'react';
 import Button from '../lib/components/button';
 import { Settings, Clipboard, Code, CreditCard, Users } from 'lucide-react';
 import NavItem from '../components/NavItem';
@@ -98,20 +98,13 @@ export default function DashboardSettings() {
           {activeTab === 'api' && (
               <div className="space-y-8">
                   <SettingsSection title="Chiavi API" description="Gestisci le chiavi per l'accesso programmatico.">
-                      <div className="space-y-4">
-                          <div className="bg-[#151515] border border-white/5 rounded-xl p-4 flex items-center justify-between gap-4 group hover:border-white/10 transition-colors">
-                              <div className="flex-1 min-w-0">
-                                  <div className="text-xs font-bold text-white/40 uppercase tracking-wider mb-1">Production Key</div>
-                                  <div className="font-mono text-sm text-white truncate opacity-70">pk_live_51Mxz...92xLz</div>
-                              </div>
-                              <button className="p-2 hover:bg-white/10 rounded-lg text-white/50 hover:text-white transition-colors">
-                                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                              </button>
-                          </div>
-                          <button className="w-full py-3 border border-dashed border-white/20 text-white/40 hover:text-white hover:border-white/40 hover:bg-white/2 rounded-xl text-sm font-medium transition-all">
-                              + Genera Nuova Chiave
-                          </button>
-                      </div>
+                  <div className="rounded-xl border border-white/8 bg-[#151515] p-4 flex flex-col gap-4">
+                    <div>
+                      <p className="text-sm text-white font-medium">Gestione chiavi per progetto</p>
+                      <p className="text-xs text-white/40 mt-1">Le chiavi sono create e revocate dalla pagina Progetti.</p>
+                    </div>
+                    <Button href="/projects" size="sm">Apri gestione chiavi</Button>
+                  </div>
                   </SettingsSection>
                   
                   <div className="h-px bg-white/5 w-full" />
@@ -150,8 +143,37 @@ export default function DashboardSettings() {
   );
 }
 
+type SettingsSectionProps = {
+  title: string;
+  description?: string;
+  children: ReactNode;
+};
 
-const SettingsSection = ({ title, description, children }: any) => (
+type SettingsInputProps = InputHTMLAttributes<HTMLInputElement> & {
+  label: string;
+  icon?: 'at';
+  prefix?: string;
+};
+
+type SettingsSelectProps = {
+  label: string;
+  options: string[];
+  defaultValue: string;
+};
+
+type SettingsToggleProps = {
+  label: string;
+  description?: string;
+  defaultChecked?: boolean;
+};
+
+type TeamRowProps = {
+  name: string;
+  email: string;
+  role: string;
+};
+
+const SettingsSection = ({ title, description, children }: SettingsSectionProps) => (
   <section>
     <div className="mb-5">
       <h3 className="text-base font-bold text-white tracking-tight">{title}</h3>
@@ -161,7 +183,7 @@ const SettingsSection = ({ title, description, children }: any) => (
   </section>
 );
 
-const SettingsInput = ({ label, icon, prefix, className, ...props }: any) => (
+const SettingsInput = ({ label, icon, prefix, className, ...props }: SettingsInputProps) => (
   <div className="space-y-1.5">
     <label className="text-xs font-semibold text-white/50 ml-1 uppercase tracking-wider">{label}</label>
     <div className="relative group flex items-center">
@@ -193,7 +215,7 @@ const SettingsInput = ({ label, icon, prefix, className, ...props }: any) => (
   </div>
 );
 
-const SettingsSelect = ({ label, options, defaultValue }: any) => (
+const SettingsSelect = ({ label, options, defaultValue }: SettingsSelectProps) => (
   <div className="space-y-1.5">
     <label className="text-xs font-semibold text-white/50 ml-1 uppercase tracking-wider">{label}</label>
     <div className="relative group">
@@ -217,7 +239,7 @@ const SettingsSelect = ({ label, options, defaultValue }: any) => (
   </div>
 );
 
-const SettingsToggle = ({ label, description, defaultChecked }: any) => {
+const SettingsToggle = ({ label, description, defaultChecked }: SettingsToggleProps) => {
   const [enabled, setEnabled] = useState(defaultChecked || false);
   return (
     <div className="flex items-center justify-between group py-2">
@@ -240,7 +262,7 @@ const SettingsToggle = ({ label, description, defaultChecked }: any) => {
   );
 };
 
-const TeamRow = ({ name, email, role }: any) => (
+const TeamRow = ({ name, email, role }: TeamRowProps) => (
     <div className="flex items-center justify-between p-4 bg-[#151515] border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors group">
         <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-full bg-linear-to-tr from-neutral-700 to-neutral-600 flex items-center justify-center text-xs font-bold text-white">
