@@ -150,6 +150,15 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		"refresh_token": refreshToken,
 	}
 
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+		Path:     "/api/auth/refresh",
+		Expires:  time.Now().Add(utils.RefreshTokenExpiry),
+	})
+
 	utils.WriteJSON(w, http.StatusOK, resp)
 }
 
@@ -205,9 +214,8 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		Name:     "refresh_token",
 		Value:    newRefreshToken,
 		HttpOnly: true,
-		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
-		Path:     "/auth/refresh",
+		Path:     "/api/auth/refresh",
 		Expires:  newExpiry,
 	})
 
